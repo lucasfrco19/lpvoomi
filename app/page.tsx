@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { IconType } from "react-icons";
+import { SiInstagram, SiMercadopago, SiShopee, SiTiktok, SiYoutube } from "react-icons/si";
+import { FaAmazon } from "react-icons/fa";
 
 const nav = [
   ["Como funciona", "#plataforma"],
@@ -43,6 +46,19 @@ const faqs = [
   ["Só funciona para TikTok Shop?", "Não. O vídeo serve para TikTok Shop, Shopee, Mercado Livre, Instagram Shop e outros canais."],
   ["E se eu travar ou tiver dúvida?", "Um assistente inteligente responde 24h e, quando precisar, há suporte humano de verdade."],
 ];
+
+const marketplaces: Array<[string, string, IconType, string]> = [
+  ["TikTok Shop", "tiktok", SiTiktok, "TikTok Shop"],
+  ["Shopee", "shopee", SiShopee, "Shopee"],
+  ["Mercado Livre", "mercado", SiMercadopago, "mercado livre"],
+  ["Instagram Shop", "instagram", SiInstagram, "Instagram Shop"],
+  ["Amazon", "amazon", FaAmazon, "amazon"],
+  ["YouTube Shopping", "youtube", SiYoutube, "YouTube Shopping"],
+];
+
+function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: string; Icon: IconType; wordmark: string }) {
+  return <span className={`market-logo market-logo--${brand}`} aria-label={name}><i><Icon aria-hidden="true" /></i><b>{wordmark}</b></span>;
+}
 
 function Brand() {
   return <a className="brand" href="#inicio" aria-label="Voomi — início"><img src="/favicon-512.png" alt="" /><span>voomi</span></a>;
@@ -99,7 +115,7 @@ export default function Home() {
 
     <section className="market" aria-label="Marketplaces compatíveis">
       <p>UM VÍDEO. VÁRIOS LUGARES PRA VENDER.</p>
-      <div className="marquee"><div>{["TikTok Shop","Shopee","mercado livre","Instagram Shop","amazon","YouTube Shopping","TikTok Shop","Shopee","mercado livre","Instagram Shop","amazon","YouTube Shopping"].map((x,i)=><span key={i}>{x}</span>)}</div></div>
+      <div className="marquee"><div>{[...marketplaces, ...marketplaces].map(([name,brand,Icon,wordmark],i)=><MarketLogo key={`${brand}-${i}`} name={name} brand={brand} Icon={Icon} wordmark={wordmark} />)}</div></div>
     </section>
 
     <section className="numbers container section-tight" aria-label="Números da Voomi">
