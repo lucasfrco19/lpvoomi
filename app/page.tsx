@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { IconType } from "react-icons";
 import { SiInstagram, SiMercadopago, SiShopee, SiTiktok, SiYoutube } from "react-icons/si";
 import { FaAmazon } from "react-icons/fa";
+import { FiBarChart2, FiBox, FiEyeOff, FiLayers, FiPlayCircle, FiShare2, FiShield, FiStar, FiTrendingUp, FiUserCheck, FiVideoOff, FiZap } from "react-icons/fi";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const nav = [
   ["Como funciona", "#plataforma"],
   ["Pra quem é", "#para-quem"],
   ["Provas", "#provas"],
+  ["Planos", "#planos"],
   ["Dúvidas", "#faq"],
 ];
 
@@ -22,10 +26,10 @@ const pains = [
 ];
 
 const features = [
-  ["Radar de produtos", "Encontre produtos validados, comissão, vendas e crescimento. Um clique manda tudo para o Creator Lab.", "RADAR"],
-  ["Viral Boost", "Crie historinhas virais para crescer a conta e alcançar os primeiros seguidores que destravam sua loja.", "BOOST"],
-  ["Personalize IA", "Crie avatares e cenários ilimitados. Sua foto pode virar avatar — seu rosto real não precisa aparecer.", "AVATAR"],
-  ["Lab Studio", "Corte, divida cenas, ajuste, legende e exporte no navegador. Sem CapCut. Sem Premiere.", "STUDIO"],
+  ["Radar de produtos", "Encontre produtos validados, comissão, vendas e crescimento. Um clique manda tudo para o Creator Lab.", "RADAR", "/assets/module-radar-full.webp"],
+  ["Viral Boost", "Crie historinhas virais para crescer a conta e alcançar os primeiros seguidores que destravam sua loja.", "BOOST", "/assets/module-boost-full.webp"],
+  ["Personalize IA", "Crie avatares e cenários ilimitados. Sua foto pode virar avatar — seu rosto real não precisa aparecer.", "AVATAR", "/assets/module-avatar-full.webp"],
+  ["Lab Studio", "Corte, divida cenas, ajuste, legende e exporte no navegador. Sem CapCut. Sem Premiere.", "STUDIO", "/assets/module-studio-full.webp"],
 ];
 
 const people = [
@@ -35,6 +39,39 @@ const people = [
   ["04", "Não sabe editar e não quer aprender", "A Voomi monta o vídeo e ensina você do zero."],
   ["05", "Já vende e quer escalar sem virar refém do conteúdo", "Multiplique criativos em minutos, sem gravar."],
   ["06", "Cansou de ferramenta que só mostra o que vende", "A Voomi entrega o vídeo pronto na sua mão."],
+];
+
+const painIcons = [FiBox, FiVideoOff, FiTrendingUp, FiShare2, FiBarChart2, FiShield];
+const peopleIcons = [FiEyeOff, FiBox, FiVideoOff, FiStar, FiLayers, FiZap];
+
+const plans = [
+  {
+    name: "Plano Mensal",
+    eyebrow: "COMECE NO SEU RITMO",
+    price: "147,00",
+    cycle: "/mês",
+    description: "Crie todos os meses e aumente seu volume a cada renovação.",
+    features: [
+      ["Imagens ilimitadas", "Crie quantas imagens precisar"],
+      ["15 vídeos por mês", "Créditos liberados mensalmente"],
+      ["+3 vídeos por renovação", "Seu limite cresce enquanto você continua"],
+    ],
+    cta: "Quero começar no mensal",
+  },
+  {
+    name: "Plano Vitalício",
+    eyebrow: "MELHOR ESCOLHA",
+    price: "697,00",
+    cycle: "pagamento único",
+    description: "Acesso definitivo para criar sem mensalidade e sem prazo para acabar.",
+    features: [
+      ["Imagens ilimitadas", "Crie sem limite sempre que precisar"],
+      ["40 vídeos liberados", "Um pacote inicial maior para produzir"],
+      ["Créditos em dobro", "No primeiro pacote de créditos que comprar"],
+    ],
+    cta: "Quero acesso vitalício",
+    featured: true,
+  },
 ];
 
 const faqs = [
@@ -56,6 +93,15 @@ const marketplaces: Array<[string, string, IconType, string]> = [
   ["YouTube Shopping", "youtube", SiYoutube, "YouTube Shopping"],
 ];
 
+const carouselVideos = [
+  { src: "/assets/videos/voomi-video-01.mp4", poster: "/assets/voomi-video-01-poster.jpg", label: "Resultado de criador 01" },
+  { src: "/assets/videos/voomi-video-02.mp4", poster: "/assets/voomi-video-02-poster.jpg", label: "Resultado de criador 02" },
+  { src: "/assets/videos/voomi-video-03.mp4", poster: "/assets/voomi-video-03-poster.jpg", label: "Resultado de criador 03" },
+  { src: "/assets/videos/voomi-video-04.mp4", poster: "/assets/voomi-video-04-poster.jpg", label: "Resultado de criador 04" },
+  { src: "/assets/videos/voomi-video-05.mp4", poster: "/assets/voomi-video-05-poster.jpg", label: "Resultado de criador 05" },
+  { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
+];
+
 function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: string; Icon: IconType; wordmark: string }) {
   return <span className={`market-logo market-logo--${brand}`} aria-label={name}><i><Icon aria-hidden="true" /></i><b>{wordmark}</b></span>;
 }
@@ -68,21 +114,105 @@ function CTA({ children, href = "#oferta", compact = false }: { children: React.
   return <a className={`cta ${compact ? "cta--compact" : ""}`} href={href}><span>{children}</span><b aria-hidden="true">↗</b></a>;
 }
 
-function Placeholder({ label, className = "" }: { label: string; className?: string }) {
-  return <div className={`placeholder ${className}`}><span className="placeholder__corners" /><div className="placeholder__icon">▶</div><small>ESPAÇO RESERVADO</small><strong>{label}</strong></div>;
+function Placeholder({ label, className = "", src }: { label: string; className?: string; src?: string }) {
+  return <div className={`placeholder ${className} ${src ? "placeholder--media" : ""}`}>{src ? <><img src={src} alt={label} /><span className="placeholder__media-label">{label}</span></> : <><span className="placeholder__corners" /><div className="placeholder__icon">▶</div><small>ESPAÇO RESERVADO</small><strong>{label}</strong></>}</div>;
 }
 
 export default function Home() {
+  const pageRef = useRef<HTMLElement>(null);
   const [menu, setMenu] = useState(false);
-  const [video, setVideo] = useState(false);
   const [faq, setFaq] = useState(0);
+  const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const warmedVideos = useRef(new Map<string, HTMLVideoElement>());
+
+  const warmVideo = (src: string) => {
+    if (warmedVideos.current.has(src) || warmedVideos.current.size >= 3) return;
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.src = src;
+    video.muted = true;
+    warmedVideos.current.set(src, video);
+    video.load();
+  };
+
+  const openVideo = (video: (typeof carouselVideos)[number]) => {
+    setVideoReady(false);
+    setActiveVideo(video);
+  };
 
   useEffect(() => {
-    document.body.style.overflow = video ? "hidden" : "";
+    document.body.style.overflow = activeVideo ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [video]);
+  }, [activeVideo]);
 
-  return <main id="inicio">
+  useEffect(() => {
+    const previews = Array.from(document.querySelectorAll<HTMLVideoElement>(".story-rail .story-video video"));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          video.muted = true;
+          void video.play().catch(() => undefined);
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "80px" });
+    previews.forEach((video) => observer.observe(video));
+    return () => {
+      observer.disconnect();
+      previews.forEach((video) => video.pause());
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const sections = gsap.utils.toArray<HTMLElement>("[data-reveal]", page);
+    if (reducedMotion) {
+      sections.forEach((section) => section.classList.add("is-visible"));
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+    document.documentElement.classList.add("gsap-enhanced");
+    const pointerCleanups: Array<() => void> = [];
+    const context = gsap.context(() => {
+      gsap.timeline({ defaults: { ease: "power3.out" } })
+        .from(".nav", { y: -24, autoAlpha: 0, duration: 0.7 })
+        .from(".hero__eyebrow", { y: 18, autoAlpha: 0, duration: 0.55 }, "-=.25")
+        .from(".hero__copy > *", { y: 30, autoAlpha: 0, duration: 0.75, stagger: 0.09 }, "-=.3");
+
+      sections.forEach((section) => {
+        section.classList.add("is-visible");
+        const heading = section.querySelector(".section-head, .faq__intro");
+        const cards = section.querySelectorAll(":scope .pain-card, :scope .audience-card, :scope .pricing-card, :scope .feature-grid > article, :scope .proof-grid > div");
+        if (heading) gsap.from(heading, { y: 38, autoAlpha: 0, duration: 0.85, scrollTrigger: { trigger: section, start: "top 82%", once: true } });
+        if (cards.length) gsap.from(cards, { y: 46, autoAlpha: 0, duration: 0.72, stagger: 0.09, ease: "power3.out", scrollTrigger: { trigger: cards[0], start: "top 88%", once: true } });
+      });
+
+      gsap.utils.toArray<HTMLElement>(".pain-card, .audience-card", page).forEach((card) => {
+        const glow = card.querySelector(".card-glow");
+        const moveGlow = (event: PointerEvent) => {
+          const rect = card.getBoundingClientRect();
+          gsap.to(glow, { x: event.clientX - rect.left, y: event.clientY - rect.top, duration: 0.35, overwrite: true });
+        };
+        card.addEventListener("pointermove", moveGlow);
+        pointerCleanups.push(() => card.removeEventListener("pointermove", moveGlow));
+      });
+    }, page);
+
+    return () => {
+      document.documentElement.classList.remove("gsap-enhanced");
+      pointerCleanups.forEach((cleanup) => cleanup());
+      context.revert();
+    };
+  }, []);
+
+  return <main id="inicio" ref={pageRef}>
     <div className="ambient" aria-hidden="true"><i /><i /><i /></div>
     <header className="nav-wrap">
       <nav className="nav container" aria-label="Navegação principal">
@@ -94,44 +224,65 @@ export default function Home() {
       </nav>
     </header>
 
-    <section className="hero container section">
-      <div className="hero__eyebrow"><span>●</span> SEM APARECER <i /> SEM GRAVAR <i /> SEM EDITOR</div>
-      <button className="hero__video" onClick={() => setVideo(true)} aria-label="Abrir vídeo de vendas">
-        <Placeholder label="VSL / VÍDEO PRINCIPAL" />
-        <span className="video-badge">VSL ~2 MIN</span>
-      </button>
+    <section className="hero hero--no-vsl container section">
+      <div className="hero__brand-field" aria-hidden="true">
+        {Array.from({ length: 18 }, (_, index) => <i key={index}><img src="/favicon-512.png" alt="" /></i>)}
+      </div>
+      <div className="hero__eyebrow"><span>SEM APARECER</span><span>SEM GRAVAR</span><span>SEM EDITOR</span></div>
       <div className="hero__copy">
         <p className="kicker">A operação completa para vender com vídeo</p>
         <h1>Ache o produto vencedor.<br /><em>A IA cria o vídeo por você.</em></h1>
         <p className="hero__sub">Com um avatar no seu lugar — pronto pra postar em minutos.</p>
         <div className="social-line">
-          <div className="avatars">{[1,2,3,4,5].map(n => <span key={n}>{n === 5 ? "+" : ""}</span>)}</div>
+          <div className="avatars" aria-label="Criadores da comunidade">{[1,2,3,4,5].map(n => <span key={n} aria-hidden="true" />)}</div>
           <div><b>★★★★★</b><small>+4.000 criadores ativos</small></div>
         </div>
-        <CTA>Quero criar sem aparecer</CTA>
-        <p className="micro">Acesso vitalício <i /> pague uma vez</p>
+        <div className="hero__action">
+          <CTA>Quero criar sem aparecer</CTA>
+          <p className="micro"><span>Acesso vitalício</span><i /><span>Pague uma vez</span></p>
+        </div>
       </div>
     </section>
 
     <section className="market" aria-label="Marketplaces compatíveis">
-      <p>UM VÍDEO. VÁRIOS LUGARES PRA VENDER.</p>
+      <p>Um vídeo. Vários lugares para vender.</p>
       <div className="marquee"><div>{[...marketplaces, ...marketplaces].map(([name,brand,Icon,wordmark],i)=><MarketLogo key={`${brand}-${i}`} name={name} brand={brand} Icon={Icon} wordmark={wordmark} />)}</div></div>
     </section>
 
-    <section className="numbers container section-tight" aria-label="Números da Voomi">
-      {[["+4.000","pessoas usam a Voomi"],["~1.000","criativos todo dia"],["+500","produtos no radar"],["+50","novos criadores por dia"]].map(([n,l])=><div key={n}><strong>{n}</strong><span>{l}</span></div>)}
+    <section className="numbers container section-tight" aria-label="Números da Voomi" data-reveal>
+      {[["4.000","pessoas usam a Voomi"],["1.000","criativos todo dia"],["500","produtos no radar"],["50","novos criadores por dia"]].map(([n,l])=><div key={n}><strong>{n}</strong><span>{l}</span></div>)}
       <p>8 meses no mercado. Todo dia mais gente vendendo sem aparecer.</p>
     </section>
 
-    <section className="container section pains">
+    <section className="container section pains" data-reveal>
       <div className="section-head"><span>01 — DESTRAVE</span><h2>Você não trava por falta de vontade.<br /><em>Trava sempre nos mesmos lugares.</em></h2><p>E cada trava dessas tem uma saída dentro da Voomi.</p></div>
-      <div className="pain-grid">{pains.map(([q,a],i)=><article key={q} className={i===1?"featured":""}><div className="alert">!</div><span>0{i+1}</span><h3>“{q}”</h3><p><b>→</b> {a}</p></article>)}</div>
+      <div className="pain-grid">{pains.map(([q,a],i)=>{ const Icon = painIcons[i]; return <article key={q} className={`pain-card ${i===1?"featured":""}`}><i className="card-glow" aria-hidden="true" /><div className="card-top"><span>0{i+1}</span><b><Icon aria-hidden="true" /></b></div><small>O BLOQUEIO</small><h3>“{q}”</h3><div className="card-solution"><FiPlayCircle aria-hidden="true" /><p>{a}</p></div><footer>RESOLVIDO COM A VOOMI <strong>↗</strong></footer></article>})}</div>
       <p className="manifesto">Não é ferramenta pra uma etapa.<br /><strong>É a operação inteira, do produto ao vídeo postado.</strong></p>
     </section>
 
-    <section className="section compare-wrap">
+    <section className="outcome-bridge" data-reveal>
+      <div className="outcome-bridge__dots" aria-hidden="true" />
+      <div className="container outcome-bridge__inner">
+        <div className="outcome-bridge__copy">
+          <span>O PONTO DE VIRADA</span>
+          <h2>Enquanto você tenta<br />fazer tudo sozinho…</h2>
+          <p>Tem gente encontrando um produto, transformando uma ideia em vídeo e colocando o criativo no ar no mesmo dia.</p>
+          <strong>A boa notícia: você não precisa mais começar da câmera.</strong>
+        </div>
+        <div className="outcome-bridge__visual" aria-label="Espaços reservados para criativos e provas de venda">
+          <div className="floating-video floating-video--one"><img src="/assets/voomi-outcome-product.webp" alt="Massageador portátil em criativo vertical" /><small>PRODUTO REAL</small></div>
+          <div className="floating-video floating-video--two"><img src="/assets/voomi-outcome-avatar.webp" alt="Criador demonstrando o massageador portátil" /><small>CRIATIVO COM AVATAR</small></div>
+          <div className="proof-stack">
+            <span>RESULTADOS RECENTES</span>
+            {[["Mariana S.", "R$ 189,70"], ["Carlos M.", "R$ 327,40"], ["Ana C.", "R$ 94,50"]].map(([name, value]) => <div key={name}><i>✓</i><p>Venda realizada<small>{name}</small></p><b>{value}</b></div>)}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="section compare-wrap" data-reveal>
       <div className="container compare">
-        <div className="section-head left"><span>02 — SEM CÂMERA</span><h2>O que te trava não é a ferramenta.<br /><em>É a câmera apontada pra você.</em></h2><p>Você já pensou em vender online. Mas na hora de gravar, travou. A Voomi existe para você vender sem passar por isso.</p></div>
+      <div className="section-head left compare-title"><span>02 — SEM CÂMERA</span><h2>O que te trava não é a ferramenta.<br /><em>É a câmera apontada pra você.</em></h2><p>Você já pensou em vender online. Mas na hora de gravar, travou. A Voomi existe para você vender sem passar por isso.</p></div>
         <div className="comparison">
           <div className="comparison__side muted-side"><small>AS OUTRAS</small>{["Mostram vídeos — você grava","Você ainda precisa aparecer","O vídeo nunca sai","Cobrança todo mês"].map(x=><p key={x}><i>×</i>{x}</p>)}</div>
           <div className="comparison__side voomi-side"><small>COM A VOOMI</small>{["O avatar grava por você","Seu rosto nunca aparece","Vídeo pronto em minutos","Pague uma vez. É seu."].map(x=><p key={x}><i>✓</i>{x}</p>)}</div>
@@ -140,43 +291,66 @@ export default function Home() {
       </div>
     </section>
 
-    <section id="plataforma" className="container section platform">
+    <section id="plataforma" className="container section platform" data-reveal>
       <div className="section-head"><span>03 — A PLATAFORMA</span><h2>Não é uma ferramenta.<br /><em>É a operação inteira na sua mão.</em></h2><p>Do produto vencedor ao vídeo pronto. Sem aparecer, sem editor, sem sair daqui.</p></div>
       <article className="creator">
         <div className="creator__copy"><span className="chip">MÓDULO PRINCIPAL</span><small>CREATOR LAB</small><h3>Onde o produto<br />vira <em>vídeo.</em></h3><p>Escolha o produto, o avatar, a voz e o cenário. A Voomi monta tudo e entrega o vídeo pronto pra postar.</p><ul><li>Avatar no seu lugar</li><li>Voz e movimento por IA</li><li>Seu rosto nunca aparece</li></ul></div>
-        <div className="creator__visual"><Placeholder label="ANTES — FOTO DO PRODUTO" className="before" /><span>→</span><Placeholder label="DEPOIS — VÍDEO COM AVATAR" className="after" /></div>
+        <div className="creator__visual"><Placeholder label="ANTES — FOTO DO PRODUTO" className="before" src="/assets/voomi-product-creative.webp" /><span>→</span><Placeholder label="DEPOIS — CRIATIVO COM AVATAR" className="after" src="/assets/voomi-avatar-creative.webp" /></div>
       </article>
-      <div className="feature-grid">{features.map(([title,text,tag],i)=><article key={title}><span>0{i+1}</span><small>{tag}</small><div className="feature-placeholder">CONTEÚDO VISUAL<br />DO MÓDULO</div><h3>{title}</h3><p>{text}</p><b>EXPLORAR MÓDULO ↗</b></article>)}</div>
+      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title}><span>0{i+1}</span><small>{tag}</small><div className="feature-placeholder"><img src={src} alt={`Tela completa do módulo ${title}`} /></div><h3>{title}</h3><p>{text}</p><b>EXPLORAR MÓDULO ↗</b></article>)}</div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
     </section>
 
-    <section id="para-quem" className="container section for-you">
-      <div className="section-head left"><span>04 — PRA QUEM É</span><h2>Se você se reconhecer em um destes,<br /><em>a Voomi é pra você.</em></h2></div>
-      <div className="people-grid">{people.map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div>
+    <section id="para-quem" className="container section for-you" data-reveal>
+      <div className="section-head left audience-title"><span>04 — PRA QUEM É</span><h2>Se você se reconhecer em um destes,<br /><em>a Voomi é pra você.</em></h2></div>
+      <div className="people-grid">{people.map(([n,t,d],i)=>{ const Icon = peopleIcons[i]; return <article className="audience-card" key={n}><i className="card-glow" aria-hidden="true" /><div className="card-top"><span>{n}</span><b><Icon aria-hidden="true" /></b></div><small>ESSE PERFIL É VOCÊ?</small><h3>{t}</h3><div className="audience-card__line" /><p>{d}</p><footer><FiUserCheck aria-hidden="true" /> A VOOMI RESOLVE <strong>↗</strong></footer></article>})}</div>
       <div className="center-cta"><p>O que faltava não era vontade. Era uma forma de vender sem precisar aparecer.</p><h3>Agora você tem.</h3><CTA>Quero começar sem aparecer</CTA></div>
     </section>
 
-    <section id="provas" className="section proof-wrap">
+    <section id="provas" className="section proof-wrap" data-reveal>
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p>Os espaços abaixo receberão os prints reais, anonimizados e aprovados.</p></div>
+        <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
+          <div className="story-rail__track">{[...carouselVideos, ...carouselVideos].map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={() => warmVideo(video.src)} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video src={video.src} poster={video.poster} muted loop playsInline preload="metadata" disablePictureInPicture /><span><i>▶</i> CLIQUE PARA OUVIR</span></button>})}</div>
+        </div>
         <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
-        <div className="support-note"><span>↳</span><p><strong>E quando bate a dúvida, tem gente de verdade do outro lado.</strong><br />Você começa acompanhado.</p></div>
+        <div className="support-note support-card"><div className="support-card__people"><span /><span /><span /><b>+12</b></div><div className="support-card__copy"><small>SUPORTE VOOMI · ONLINE AGORA</small><p><strong>Você não precisa descobrir tudo sozinho.</strong><br />Especialistas acompanham seus primeiros passos, analisam suas dúvidas e ajudam você a colocar o primeiro criativo no ar.</p></div><div className="support-card__status"><i />Tempo médio<br /><strong>4 min</strong></div></div>
         <p className="proof-close">Nenhum apareceu na câmera. Nenhum tinha experiência.<br /><strong>A diferença é que eles começaram.</strong></p>
       </div>
     </section>
 
-    <section id="faq" className="container section faq">
-      <div className="faq__intro"><span>06 — DÚVIDAS</span><h2>Ficou com alguma dúvida?<br /><em>A gente responde.</em></h2><p>Respostas diretas, sem letras miúdas.</p></div>
+    <section id="planos" className="container section pricing" data-reveal>
+      <div className="section-head">
+        <span>06 — ESCOLHA SEU PLANO</span>
+        <h2>Comece agora. Continue<br /><em>do jeito que faz sentido pra você.</em></h2>
+        <p>Imagens ilimitadas em qualquer plano. Escolha entre a flexibilidade mensal ou o acesso definitivo.</p>
+      </div>
+      <div className="pricing-grid">
+        {plans.map((plan) => <article className={`pricing-card ${plan.featured ? "pricing-card--featured" : ""}`} key={plan.name}>
+          {plan.featured && <div className="pricing-card__badge"><FiZap aria-hidden="true" /> MAIS VANTAJOSO</div>}
+          <div className="pricing-card__head"><small>{plan.eyebrow}</small><h3>{plan.name}</h3><p>{plan.description}</p></div>
+          <div className="pricing-card__price"><span>R$</span><strong>{plan.price}</strong><small>{plan.cycle}</small></div>
+          <div className="pricing-card__divider" />
+          <ul>{plan.features.map(([title, detail]) => <li key={title}><i><FiUserCheck aria-hidden="true" /></i><div><strong>{title}</strong><span>{detail}</span></div></li>)}</ul>
+          <a className="pricing-card__cta" href="#oferta"><span>{plan.cta}</span><b aria-hidden="true">↗</b></a>
+          <p className="pricing-card__micro">ACESSO À PLATAFORMA VOOMI</p>
+        </article>)}
+      </div>
+      <div className="pricing-note"><FiShield aria-hidden="true" /><p><strong>Escolha com tranquilidade.</strong><span>Os dois planos incluem imagens ilimitadas e acesso à experiência completa da Voomi.</span></p></div>
+    </section>
+
+    <section id="faq" className="container section faq" data-reveal>
+      <div className="faq__intro"><span>07 — DÚVIDAS</span><h2>Ficou com alguma dúvida?<br /><em>A gente responde.</em></h2><p>Respostas diretas, sem letras miúdas.</p></div>
       <div className="faq__list">{faqs.map(([q,a],i)=><article key={q} className={faq===i?"open":""}><button onClick={()=>setFaq(faq===i?-1:i)} aria-expanded={faq===i}><span>0{i+1}</span><b>{q}</b><i>{faq===i?"−":"+"}</i></button><div><p>{a}</p></div></article>)}</div>
     </section>
 
-    <section id="oferta" className="final section">
+    <section id="oferta" className="final section" data-reveal>
       <div className="final__orb" aria-hidden="true" />
       <div className="container final__content"><span className="chip">A DECISÃO É SUA</span><h2>Você chegou até aqui<br /><em>por um motivo.</em></h2><p>Agora existe um jeito de vender sem pôr a cara na internet, sem estoque, sem saber gravar ou editar. A Voomi acha o produto, cria o avatar e entrega o vídeo pronto.</p><h3>A pergunta não é mais “será que eu consigo?”<br /><strong>É “por que não começar agora?”</strong></h3><CTA>Quero criar meu primeiro vídeo sem aparecer</CTA><small>SEM GRAVAR <i /> SEM APARECER <i /> SEM MENSALIDADE</small></div>
     </section>
 
     <footer className="container footer"><Brand /><p>Vídeos que vendem. Sem você aparecer.</p><span>© 2026 Voomi. Todos os direitos reservados.</span></footer>
 
-    {video && <div className="modal" role="dialog" aria-modal="true" aria-label="Vídeo de apresentação"><button onClick={()=>setVideo(false)} aria-label="Fechar vídeo">×</button><Placeholder label="VSL FINAL — COM ÁUDIO" /></div>}
+    {activeVideo && <div className={`video-lightbox ${videoReady ? "is-ready" : "is-loading"}`} role="dialog" aria-modal="true" aria-label={activeVideo.label} onClick={() => setActiveVideo(null)}><button type="button" onClick={() => setActiveVideo(null)} aria-label="Fechar vídeo">×</button><div className="video-lightbox__stage" onClick={(event) => event.stopPropagation()}><video key={activeVideo.src} src={activeVideo.src} poster={activeVideo.poster} preload="auto" controls autoPlay playsInline onCanPlay={() => setVideoReady(true)} /><span className="video-lightbox__loading" aria-live="polite">Carregando vídeo…</span></div></div>}
   </main>;
 }
