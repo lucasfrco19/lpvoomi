@@ -156,37 +156,34 @@ export default function Home() {
       video.setAttribute("playsinline", "");
       void video.play().catch(() => undefined);
     };
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const video = entry.target as HTMLVideoElement;
-        if (entry.isIntersecting) {
-          playPreview(video);
-        } else {
-          video.pause();
-        }
-      });
-    }, { threshold: 0.01, rootMargin: "0px" });
-    previews.forEach((video) => {
-      video.defaultMuted = true;
-      video.muted = true;
-      observer.observe(video);
-    });
-    const resumeVisiblePreviews = () => {
+    const syncVisiblePreviews = () => {
       if (document.hidden) {
         previews.forEach((video) => video.pause());
         return;
       }
       previews.forEach((video) => {
         const bounds = video.getBoundingClientRect();
-        if (bounds.right > 0 && bounds.left < window.innerWidth) playPreview(video);
+        const visible = bounds.right > 0 && bounds.left < window.innerWidth && bounds.bottom > 0 && bounds.top < window.innerHeight;
+        if (visible) playPreview(video);
+        else video.pause();
       });
     };
-    document.addEventListener("visibilitychange", resumeVisiblePreviews);
-    window.addEventListener("pageshow", resumeVisiblePreviews);
+    previews.forEach((video) => {
+      video.defaultMuted = true;
+      video.muted = true;
+      video.playsInline = true;
+    });
+    const initialSync = window.requestAnimationFrame(syncVisiblePreviews);
+    const syncTimer = window.setInterval(syncVisiblePreviews, 700);
+    document.addEventListener("visibilitychange", syncVisiblePreviews);
+    window.addEventListener("pageshow", syncVisiblePreviews);
+    window.addEventListener("resize", syncVisiblePreviews, { passive: true });
     return () => {
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", resumeVisiblePreviews);
-      window.removeEventListener("pageshow", resumeVisiblePreviews);
+      window.cancelAnimationFrame(initialSync);
+      window.clearInterval(syncTimer);
+      document.removeEventListener("visibilitychange", syncVisiblePreviews);
+      window.removeEventListener("pageshow", syncVisiblePreviews);
+      window.removeEventListener("resize", syncVisiblePreviews);
       previews.forEach((video) => video.pause());
     };
   }, []);
@@ -336,7 +333,7 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p>Os espaços abaixo receberão os prints reais, anonimizados e aprovados.</p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track">{[...carouselVideos, ...carouselVideos].map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={() => warmVideo(video.src)} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video src={video.src} poster={video.poster} muted autoPlay loop playsInline preload="metadata" disablePictureInPicture /><span><i>▶</i> CLIQUE PARA OUVIR</span></button>})}</div>
+          <div className="story-rail__track">{[...carouselVideos, ...carouselVideos].map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={() => warmVideo(video.src)} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})}</div>
         </div>
         <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
         <div className="support-note support-card"><div className="support-card__people"><span /><span /><span /><b>+12</b></div><div className="support-card__copy"><small>SUPORTE VOOMI · ONLINE AGORA</small><p><strong>Você não precisa descobrir tudo sozinho.</strong><br />Especialistas acompanham seus primeiros passos, analisam suas dúvidas e ajudam você a colocar o primeiro criativo no ar.</p></div><div className="support-card__status"><i />Tempo médio<br /><strong>4 min</strong></div></div>
