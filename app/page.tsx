@@ -97,9 +97,6 @@ const carouselVideos = [
   { src: "/assets/videos/voomi-video-01.mp4", poster: "/assets/voomi-video-01-poster.jpg", label: "Resultado de criador 01" },
   { src: "/assets/videos/voomi-video-02.mp4", poster: "/assets/voomi-video-02-poster.jpg", label: "Resultado de criador 02" },
   { src: "/assets/videos/voomi-video-03.mp4", poster: "/assets/voomi-video-03-poster.jpg", label: "Resultado de criador 03" },
-  { src: "/assets/videos/voomi-video-04.mp4", poster: "/assets/voomi-video-04-poster.jpg", label: "Resultado de criador 04" },
-  { src: "/assets/videos/voomi-video-05.mp4", poster: "/assets/voomi-video-05-poster.jpg", label: "Resultado de criador 05" },
-  { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
 ];
 
 function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: string; Icon: IconType; wordmark: string }) {
@@ -154,7 +151,7 @@ export default function Home() {
       video.playsInline = true;
       video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
-      void video.play().catch(() => undefined);
+      if (video.paused) void video.play().catch(() => undefined);
     };
     const syncVisiblePreviews = () => {
       if (document.hidden) {
@@ -174,7 +171,7 @@ export default function Home() {
       video.playsInline = true;
     });
     const initialSync = window.requestAnimationFrame(syncVisiblePreviews);
-    const syncTimer = window.setInterval(syncVisiblePreviews, 700);
+    const syncTimer = window.setInterval(syncVisiblePreviews, 900);
     document.addEventListener("visibilitychange", syncVisiblePreviews);
     window.addEventListener("pageshow", syncVisiblePreviews);
     window.addEventListener("resize", syncVisiblePreviews, { passive: true });
@@ -336,7 +333,6 @@ export default function Home() {
           <div className="story-rail__track">{[...carouselVideos, ...carouselVideos].map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={() => warmVideo(video.src)} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})}</div>
         </div>
         <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
-        <div className="support-note support-card"><div className="support-card__people"><span /><span /><span /><b>+12</b></div><div className="support-card__copy"><small>SUPORTE VOOMI · ONLINE AGORA</small><p><strong>Você não precisa descobrir tudo sozinho.</strong><br />Especialistas acompanham seus primeiros passos, analisam suas dúvidas e ajudam você a colocar o primeiro criativo no ar.</p></div><div className="support-card__status"><i />Tempo médio<br /><strong>4 min</strong></div></div>
         <p className="proof-close">Nenhum apareceu na câmera. Nenhum tinha experiência.<br /><strong>A diferença é que eles começaram.</strong></p>
       </div>
     </section>
