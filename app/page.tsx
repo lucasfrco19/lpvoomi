@@ -97,6 +97,9 @@ const carouselVideos = [
   { src: "/assets/videos/voomi-video-01.mp4", poster: "/assets/voomi-video-01-poster.jpg", label: "Resultado de criador 01" },
   { src: "/assets/videos/voomi-video-02.mp4", poster: "/assets/voomi-video-02-poster.jpg", label: "Resultado de criador 02" },
   { src: "/assets/videos/voomi-video-03.mp4", poster: "/assets/voomi-video-03-poster.jpg", label: "Resultado de criador 03" },
+  { src: "/assets/videos/voomi-video-04.mp4", poster: "/assets/voomi-video-04-poster.jpg", label: "Resultado de criador 04" },
+  { src: "/assets/videos/voomi-video-05.mp4", poster: "/assets/voomi-video-05-poster.jpg", label: "Resultado de criador 05" },
+  { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
 ];
 
 function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: string; Icon: IconType; wordmark: string }) {
@@ -119,6 +122,7 @@ export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0);
+  const [compactCarousel, setCompactCarousel] = useState(false);
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const warmedVideos = useRef(new Map<string, HTMLVideoElement>());
@@ -139,6 +143,14 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 700px)");
+    const updateCarouselSize = () => setCompactCarousel(media.matches);
+    updateCarouselSize();
+    media.addEventListener("change", updateCarouselSize);
+    return () => media.removeEventListener("change", updateCarouselSize);
+  }, []);
+
+  useEffect(() => {
     document.body.style.overflow = activeVideo ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [activeVideo]);
@@ -146,6 +158,10 @@ export default function Home() {
   useEffect(() => {
     const previews = Array.from(document.querySelectorAll<HTMLVideoElement>(".story-rail .story-video video"));
     const playPreview = (video: HTMLVideoElement) => {
+      if (!video.currentSrc && video.dataset.src) {
+        video.src = video.dataset.src;
+        video.load();
+      }
       video.defaultMuted = true;
       video.muted = true;
       video.playsInline = true;
@@ -158,10 +174,15 @@ export default function Home() {
         previews.forEach((video) => video.pause());
         return;
       }
+      const visibleVideos = previews
+        .map((video) => ({ video, bounds: video.getBoundingClientRect() }))
+        .filter(({ bounds }) => bounds.right > 0 && bounds.left < window.innerWidth && bounds.bottom > 0 && bounds.top < window.innerHeight)
+        .sort((a, b) => Math.abs((a.bounds.left + a.bounds.right) / 2 - window.innerWidth / 2) - Math.abs((b.bounds.left + b.bounds.right) / 2 - window.innerWidth / 2));
+      const activeVideos = new Set(visibleVideos.slice(0, compactCarousel ? 3 : 4).map(({ video }) => video));
       previews.forEach((video) => {
         const bounds = video.getBoundingClientRect();
         const visible = bounds.right > 0 && bounds.left < window.innerWidth && bounds.bottom > 0 && bounds.top < window.innerHeight;
-        if (visible) playPreview(video);
+        if (visible && activeVideos.has(video)) playPreview(video);
         else video.pause();
       });
     };
@@ -183,7 +204,7 @@ export default function Home() {
       window.removeEventListener("resize", syncVisiblePreviews);
       previews.forEach((video) => video.pause());
     };
-  }, []);
+  }, [compactCarousel]);
 
   useLayoutEffect(() => {
     const page = pageRef.current;
@@ -330,7 +351,7 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p>Os espaços abaixo receberão os prints reais, anonimizados e aprovados.</p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track">{[...carouselVideos, ...carouselVideos].map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={() => warmVideo(video.src)} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})}</div>
+          <div className="story-rail__track">{(()=>{ const sequence = compactCarousel ? carouselVideos.slice(0,4) : [...carouselVideos, ...carouselVideos]; return [...sequence, ...sequence].map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
         <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
         <p className="proof-close">Nenhum apareceu na câmera. Nenhum tinha experiência.<br /><strong>A diferença é que eles começaram.</strong></p>
