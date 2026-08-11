@@ -285,6 +285,7 @@ img,video,svg{max-width:100%}
 .story-rail--videos{margin-bottom:44px}
 .story-rail--videos:hover .story-rail__track{animation-play-state:running}
 .story-rail--videos.is-touching .story-rail__track{animation-play-state:paused}
+.story-rail--videos.is-resetting .story-rail__track{transition:none!important}
 .mobile-video-controls{display:none}
 .section-head .proof-summary strong{display:block;margin-top:7px;color:var(--primary)}
 .story-video{position:relative;flex:0 0 210px;aspect-ratio:9/16;padding:0;border:1px solid rgba(46,224,141,.22);border-radius:22px;background:#080d0a;overflow:hidden;cursor:pointer;touch-action:manipulation;contain:layout paint style;box-shadow:0 24px 52px rgba(0,0,0,.3);transition:transform .3s,border-color .3s}
@@ -382,6 +383,11 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .market>p:before,.market>p:after{content:"";width:22px;height:1px;background:linear-gradient(90deg,transparent,var(--primary))}.market>p:after{transform:rotate(180deg)}
 @media(max-width:600px){.hero__brand-field{mask-image:radial-gradient(ellipse 68% 46% at 50% 47%,transparent 0 35%,#000 82%)}.hero__brand-field i{opacity:.13!important}.market>p{max-width:calc(100% - 28px);padding:10px 14px;font-size:9px;letter-spacing:.14em}.market>p:before,.market>p:after{width:12px}}
 @media(prefers-reduced-motion:reduce){.hero__brand-field i{animation:none!important;opacity:.18!important}}
+
+/* Cards de bloqueio no mesmo padrão visual dos cards de perfil */
+.pain-grid article,.pain-grid article.featured{background:radial-gradient(circle at 100% 0,rgba(46,224,141,.08),transparent 34%),linear-gradient(155deg,rgba(16,24,20,.98),rgba(8,13,10,.99))}
+.pain-grid article:before,.pain-grid article:after{display:none}
+.pain-grid article:hover{background:radial-gradient(circle at 100% 0,rgba(46,224,141,.15),transparent 40%),linear-gradient(155deg,rgba(17,29,23,.99),rgba(8,14,10,.99))}
 
 /* Chamada editorial da faixa de canais */
 .market>p{display:block;margin:0 auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--muted);font-size:18px;font-weight:400;line-height:1.5;letter-spacing:normal;text-transform:none;box-shadow:none}

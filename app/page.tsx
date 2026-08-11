@@ -143,6 +143,31 @@ export default function Home() {
     setActiveVideo(video);
   };
 
+  const nextMobileVideo = () => {
+    const next = mobileSlide + 1;
+    setMobileSlide(next);
+    if (next === carouselVideos.length) {
+      window.setTimeout(() => {
+        document.querySelector(".story-rail--videos")?.classList.add("is-resetting");
+        setMobileSlide(0);
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(".story-rail--videos")?.classList.remove("is-resetting")));
+      }, 500);
+    }
+  };
+
+  const previousMobileVideo = () => {
+    if (mobileSlide > 0) {
+      setMobileSlide(mobileSlide - 1);
+      return;
+    }
+    document.querySelector(".story-rail--videos")?.classList.add("is-resetting");
+    setMobileSlide(carouselVideos.length);
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.querySelector(".story-rail--videos")?.classList.remove("is-resetting");
+      setMobileSlide(carouselVideos.length - 1);
+    }));
+  };
+
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
     const updateCarouselSize = () => setCompactCarousel(media.matches);
@@ -352,9 +377,9 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p className="proof-summary">Nenhum apareceu na câmera. Nenhum tinha experiência.<strong>A diferença é que eles começaram.</strong></p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track" style={compactCarousel ? { transform: `translate3d(-${mobileSlide * 187}px,0,0)` } : undefined}>{(()=>{ const sequence = compactCarousel ? carouselVideos : [...carouselVideos, ...carouselVideos]; const renderedVideos = compactCarousel ? sequence : [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = !compactCarousel && index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track" style={compactCarousel ? { transform: `translate3d(-${mobileSlide * 187}px,0,0)` } : undefined}>{(()=>{ const sequence = compactCarousel ? carouselVideos : [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
-        <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={() => setMobileSlide((mobileSlide - 1 + carouselVideos.length) % carouselVideos.length)} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide === index ? "is-active" : ""} />)}</span><button type="button" onClick={() => setMobileSlide((mobileSlide + 1) % carouselVideos.length)} aria-label="Próximo vídeo">→</button></div>
+        <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={previousMobileVideo} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span><button type="button" onClick={nextMobileVideo} aria-label="Próximo vídeo">→</button></div>
         <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
       </div>
     </section>
