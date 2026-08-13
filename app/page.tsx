@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { IconType } from "react-icons";
 import { SiInstagram, SiMercadopago, SiShopee, SiTiktok, SiYoutube } from "react-icons/si";
 import { FaAmazon } from "react-icons/fa";
-import { FiBarChart2, FiBox, FiEyeOff, FiLayers, FiPlayCircle, FiShare2, FiShield, FiStar, FiTrendingUp, FiUserCheck, FiVideoOff, FiZap } from "react-icons/fi";
+import { FiShield, FiUserCheck, FiZap } from "react-icons/fi";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -41,8 +41,6 @@ const people = [
   ["06", "Cansou de ferramenta que só mostra o que vende", "A Voomi entrega o vídeo pronto na sua mão."],
 ];
 
-const painIcons = [FiBox, FiVideoOff, FiTrendingUp, FiShare2, FiBarChart2, FiShield];
-const peopleIcons = [FiEyeOff, FiBox, FiVideoOff, FiStar, FiLayers, FiZap];
 
 const plans = [
   {
@@ -102,6 +100,15 @@ const carouselVideos = [
   { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
 ];
 
+const proofShots = [
+  { src: "/assets/proofs/proof-primeira-venda.jpeg", metric: "Primeira venda", label: "Começou a postar e a primeira venda saiu" },
+  { src: "/assets/proofs/proof-512-vinte-vendas.jpeg", metric: "R$ 512,87", label: "20 produtos vendidos em 7 dias" },
+  { src: "/assets/proofs/proof-feedback-tenis.jpeg", metric: "Vídeos que vendem", label: "Duas vendas e evolução com as orientações" },
+  { src: "/assets/proofs/proof-374-seis-vendas.jpeg", metric: "R$ 374", label: "6 vendas e comissão gerada" },
+  { src: "/assets/proofs/proof-mil-24-vendas.jpeg", metric: "R$ 1 mil", label: "24 produtos vendidos" },
+  { src: "/assets/proofs/proof-primeira-venda-euro.jpeg", metric: "Primeira venda", label: "Resultado internacional em poucos dias" },
+];
+
 function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: string; Icon: IconType; wordmark: string }) {
   return <span className={`market-logo market-logo--${brand}`} aria-label={name}><i><Icon aria-hidden="true" /></i><b>{wordmark}</b></span>;
 }
@@ -124,9 +131,37 @@ export default function Home() {
   const [faq, setFaq] = useState(0);
   const [compactCarousel, setCompactCarousel] = useState(false);
   const [mobileSlide, setMobileSlide] = useState(0);
+  const [painSlide, setPainSlide] = useState(0);
+  const [proofSlide, setProofSlide] = useState(0);
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
   const [videoReady, setVideoReady] = useState(false);
+  const painCarouselRef = useRef<HTMLDivElement>(null);
+  const painTrackRef = useRef<HTMLDivElement>(null);
+  const painWheelLockRef = useRef(false);
   const warmedVideos = useRef(new Map<string, HTMLVideoElement>());
+
+  const goToPain = (index: number) => {
+    const next = (index + pains.length) % pains.length;
+    setPainSlide(next);
+  };
+
+  useEffect(() => {
+    const carousel = painCarouselRef.current;
+    if (!carousel) return;
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || Math.abs(event.deltaY) < 8) return;
+      const atStart = painSlide === 0 && event.deltaY < 0;
+      const atEnd = painSlide === pains.length - 1 && event.deltaY > 0;
+      if (atStart || atEnd) return;
+      event.preventDefault();
+      if (painWheelLockRef.current) return;
+      painWheelLockRef.current = true;
+      goToPain(painSlide + (event.deltaY > 0 ? 1 : -1));
+      window.setTimeout(() => { painWheelLockRef.current = false; }, 650);
+    };
+    carousel.addEventListener("wheel", handleWheel, { passive: false });
+    return () => carousel.removeEventListener("wheel", handleWheel);
+  }, [painSlide]);
 
   const warmVideo = (src: string) => {
     if (warmedVideos.current.has(src) || warmedVideos.current.size >= 3) return;
@@ -262,6 +297,7 @@ export default function Home() {
 
       gsap.utils.toArray<HTMLElement>(".pain-card, .audience-card", page).forEach((card) => {
         const glow = card.querySelector(".card-glow");
+        if (!glow) return;
         const moveGlow = (event: PointerEvent) => {
           const rect = card.getBoundingClientRect();
           gsap.to(glow, { x: event.clientX - rect.left, y: event.clientY - rect.top, duration: 0.35, overwrite: true });
@@ -320,10 +356,13 @@ export default function Home() {
       <p>8 meses no mercado. Todo dia mais gente vendendo sem aparecer.</p>
     </section>
 
-    <section className="container section pains" data-reveal>
-      <div className="section-head"><span>01 — DESTRAVE</span><h2>Você não trava por falta de vontade.<br /><em>Trava sempre nos mesmos lugares.</em></h2><p>E cada trava dessas tem uma saída dentro da Voomi.</p></div>
-      <div className="pain-grid">{pains.map(([q,a],i)=>{ const Icon = painIcons[i]; return <article key={q} className={`pain-card ${i===1?"featured":""}`}><i className="card-glow" aria-hidden="true" /><div className="card-top"><span>0{i+1}</span><b><Icon aria-hidden="true" /></b></div><small>O BLOQUEIO</small><h3>“{q}”</h3><div className="card-solution"><FiPlayCircle aria-hidden="true" /><p>{a}</p></div><footer>RESOLVIDO COM A VOOMI <strong>↗</strong></footer></article>})}</div>
-      <p className="manifesto">Não é ferramenta pra uma etapa.<br /><strong>É a operação inteira, do produto ao vídeo postado.</strong></p>
+    <section className="section pains" data-reveal>
+      <div className="unlock-shell container">
+        <header className="unlock-intro section-head left"><span>01 — DESTRAVE</span><h2>Você não trava por falta de vontade.<br /><em>Trava sempre nos mesmos lugares.</em></h2></header>
+        <div className="pain-carousel" ref={painCarouselRef}><div className="pain-grid" ref={painTrackRef} style={{ transform: `translate3d(-${painSlide * 100}%,0,0)` }}>{pains.map(([q,a],i)=><article key={q} className="pain-card"><div className="pain-card__number">0{i+1}</div><div className="pain-card__content"><div className="pain-card__problem"><small>O BLOQUEIO</small><h3>“{q}”</h3></div><div className="card-solution"><small>A SAÍDA</small><p>{a}</p></div></div></article>)}</div></div>
+        <div className="pain-controls"><div>{pains.map(([,],i)=><button key={i} type="button" className={painSlide===i?"is-active":""} onClick={()=>goToPain(i)} aria-label={`Ir para bloqueio ${i+1}`} />)}</div><span><button type="button" onClick={()=>goToPain(painSlide-1)} aria-label="Bloqueio anterior">←</button><button type="button" onClick={()=>goToPain(painSlide+1)} aria-label="Próximo bloqueio">→</button></span></div>
+        <div className="unlock-manifesto"><p>Não é ferramenta pra uma etapa. <strong>É a operação inteira, do produto ao vídeo postado.</strong></p></div>
+      </div>
     </section>
 
     <section className="outcome-bridge" data-reveal>
@@ -363,14 +402,16 @@ export default function Home() {
         <div className="creator__copy"><span className="chip">MÓDULO PRINCIPAL</span><small>CREATOR LAB</small><h3>Onde o produto<br />vira <em>vídeo.</em></h3><p>Escolha o produto, o avatar, a voz e o cenário. A Voomi monta tudo e entrega o vídeo pronto pra postar.</p><ul><li>Avatar no seu lugar</li><li>Voz e movimento por IA</li><li>Seu rosto nunca aparece</li></ul></div>
         <div className="creator__visual"><Placeholder label="ANTES — FOTO DO PRODUTO" className="before" src="/assets/voomi-product-creative.webp" /><span>→</span><Placeholder label="DEPOIS — CRIATIVO COM AVATAR" className="after" src="/assets/voomi-avatar-creative.webp" /></div>
       </article>
-      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title}><span>0{i+1}</span><small>{tag}</small><div className="feature-placeholder"><img src={src} alt={`Tela completa do módulo ${title}`} /></div><h3>{title}</h3><p>{text}</p><b>EXPLORAR MÓDULO ↗</b></article>)}</div>
+      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><img src={src} alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
     </section>
 
     <section id="para-quem" className="container section for-you" data-reveal>
-      <div className="section-head left audience-title"><span>04 — PRA QUEM É</span><h2>Se você se reconhecer em um destes,<br /><em>a Voomi é pra você.</em></h2></div>
-      <div className="people-grid">{people.map(([n,t,d],i)=>{ const Icon = peopleIcons[i]; return <article className="audience-card" key={n}><i className="card-glow" aria-hidden="true" /><div className="card-top"><span>{n}</span><b><Icon aria-hidden="true" /></b></div><small>ESSE PERFIL É VOCÊ?</small><h3>{t}</h3><div className="audience-card__line" /><p>{d}</p><footer><FiUserCheck aria-hidden="true" /> A VOOMI RESOLVE <strong>↗</strong></footer></article>})}</div>
-      <div className="center-cta"><p>O que faltava não era vontade. Era uma forma de vender sem precisar aparecer.</p><h3>Agora você tem.</h3><CTA>Quero começar sem aparecer</CTA></div>
+      <div className="audience-clean">
+        <header className="audience-clean__head"><div><span>04 — PRA QUEM É</span><h2>A Voomi é para você se...</h2></div></header>
+        <div className="audience-clean__grid">{people.map(([,t,d])=><article className="audience-profile" key={t}><span><FiUserCheck aria-hidden="true" /></span><div><h3>{t}</h3><p>{d}</p></div></article>)}</div>
+        <footer className="audience-clean__footer"><strong>Você não precisa aparecer, ter produto ou saber editar.</strong><CTA>Quero começar agora</CTA></footer>
+      </div>
     </section>
 
     <section id="provas" className="section proof-wrap" data-reveal>
@@ -380,7 +421,14 @@ export default function Home() {
           <div className="story-rail__track" style={compactCarousel ? { transform: `translate3d(-${mobileSlide * 187}px,0,0)` } : undefined}>{(()=>{ const sequence = compactCarousel ? carouselVideos : [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
         <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={previousMobileVideo} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span><button type="button" onClick={nextMobileVideo} aria-label="Próximo vídeo">→</button></div>
-        <div className="proof-grid">{["PRINT — PRIMEIRA VENDA","PRINT — R$ 64","PRINT — R$ 512 · 20 VENDAS","PRINT — R$ 1 MIL","PRINT — R$ 374 · 6 VENDAS"].map((x,i)=><div key={x} className={i===2?"tall":""}><Placeholder label={x} /></div>)}</div>
+        <div className="proof-orbit">
+          <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span><i>● SISTEMA AO VIVO</i></div>
+          <div className="proof-orbit__viewport">
+            {proofShots.map((proof,index)=>{ const raw=index-proofSlide; const offset=raw>proofShots.length/2?raw-proofShots.length:raw<-proofShots.length/2?raw+proofShots.length:raw; return <button type="button" key={proof.src} className={`proof-orbit__shot ${offset===0?"is-active":""}`} style={{"--offset":offset} as React.CSSProperties} onClick={()=>setProofSlide(index)} aria-label={`Ver prova: ${proof.label}`} aria-current={offset===0?"true":undefined}><img src={proof.src} alt={proof.label} /></button>})}
+          </div>
+          <div className="proof-orbit__readout"><div><strong>RESULTADOS REAIS</strong><p>{proofShots[proofSlide].label}</p></div><span><button type="button" onClick={()=>setProofSlide((proofSlide-1+proofShots.length)%proofShots.length)} aria-label="Prova anterior">←</button><button type="button" onClick={()=>setProofSlide((proofSlide+1)%proofShots.length)} aria-label="Próxima prova">→</button></span></div>
+          <div className="proof-orbit__dots">{proofShots.map((proof,index)=><button type="button" key={proof.src} className={proofSlide===index?"is-active":""} onClick={()=>setProofSlide(index)} aria-label={`Ir para prova ${index+1}`} />)}</div>
+        </div>
       </div>
     </section>
 
