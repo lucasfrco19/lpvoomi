@@ -138,11 +138,28 @@ export default function Home() {
   const painCarouselRef = useRef<HTMLDivElement>(null);
   const painTrackRef = useRef<HTMLDivElement>(null);
   const painWheelLockRef = useRef(false);
+  const proofTouchRef = useRef<{ x: number; y: number } | null>(null);
   const warmedVideos = useRef(new Map<string, HTMLVideoElement>());
 
   const goToPain = (index: number) => {
     const next = (index + pains.length) % pains.length;
     setPainSlide(next);
+  };
+
+  const handleProofTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    proofTouchRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleProofTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = proofTouchRef.current;
+    proofTouchRef.current = null;
+    if (!start) return;
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 42 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    setProofSlide((current) => (current + (deltaX < 0 ? 1 : -1) + proofShots.length) % proofShots.length);
   };
 
   useEffect(() => {
@@ -423,7 +440,7 @@ export default function Home() {
         <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={previousMobileVideo} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span><button type="button" onClick={nextMobileVideo} aria-label="Próximo vídeo">→</button></div>
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span><i>● SISTEMA AO VIVO</i></div>
-          <div className="proof-orbit__viewport">
+          <div className="proof-orbit__viewport" onTouchStart={handleProofTouchStart} onTouchEnd={handleProofTouchEnd} onTouchCancel={()=>{ proofTouchRef.current = null; }}>
             {proofShots.map((proof,index)=>{ const raw=index-proofSlide; const offset=raw>proofShots.length/2?raw-proofShots.length:raw<-proofShots.length/2?raw+proofShots.length:raw; return <button type="button" key={proof.src} className={`proof-orbit__shot ${offset===0?"is-active":""}`} style={{"--offset":offset} as React.CSSProperties} onClick={()=>setProofSlide(index)} aria-label={`Ver prova: ${proof.label}`} aria-current={offset===0?"true":undefined}><img src={proof.src} alt={proof.label} /></button>})}
           </div>
           <div className="proof-orbit__readout"><div><strong>RESULTADOS REAIS</strong><p>{proofShots[proofSlide].label}</p></div><span><button type="button" onClick={()=>setProofSlide((proofSlide-1+proofShots.length)%proofShots.length)} aria-label="Prova anterior">←</button><button type="button" onClick={()=>setProofSlide((proofSlide+1)%proofShots.length)} aria-label="Próxima prova">→</button></span></div>
