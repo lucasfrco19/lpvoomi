@@ -213,54 +213,23 @@ export default function Home() {
     void video.play().catch(() => undefined);
   };
 
-  const nextMobileVideo = () => {
-    const next = mobileSlide + 1;
-    setMobileSlide(next);
-    if (next === carouselVideos.length) {
-      window.setTimeout(() => {
-        document.querySelector(".story-rail--videos")?.classList.add("is-resetting");
-        setMobileSlide(0);
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(".story-rail--videos")?.classList.remove("is-resetting")));
-      }, 500);
-    }
-  };
-
-  const previousMobileVideo = () => {
-    if (mobileSlide > 0) {
-      setMobileSlide(mobileSlide - 1);
-      return;
-    }
-    document.querySelector(".story-rail--videos")?.classList.add("is-resetting");
-    setMobileSlide(carouselVideos.length);
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      document.querySelector(".story-rail--videos")?.classList.remove("is-resetting");
-      setMobileSlide(carouselVideos.length - 1);
-    }));
-  };
-
-  const nextCreationVideo = () => {
-    const next = creationSlide + 1;
-    setCreationSlide(next);
-    if (next === creationGalleryVideos.length) {
-      window.setTimeout(() => {
-        document.querySelector(".story-rail--creations")?.classList.add("is-resetting");
-        setCreationSlide(0);
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(".story-rail--creations")?.classList.remove("is-resetting")));
-      }, 500);
-    }
-  };
-
-  const previousCreationVideo = () => {
-    if (creationSlide > 0) {
-      setCreationSlide(creationSlide - 1);
-      return;
-    }
-    document.querySelector(".story-rail--creations")?.classList.add("is-resetting");
-    setCreationSlide(creationGalleryVideos.length);
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      document.querySelector(".story-rail--creations")?.classList.remove("is-resetting");
-      setCreationSlide(creationGalleryVideos.length - 1);
-    }));
+  const advanceMobileRail = (
+    setSlide: React.Dispatch<React.SetStateAction<number>>,
+    length: number,
+    selector: string,
+  ) => {
+    setSlide((current) => {
+      if (current >= length) return current;
+      const next = current + 1;
+      if (next === length) {
+        window.setTimeout(() => {
+          document.querySelector(selector)?.classList.add("is-resetting");
+          setSlide(0);
+          window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(selector)?.classList.remove("is-resetting")));
+        }, 500);
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -270,6 +239,34 @@ export default function Home() {
     media.addEventListener("change", updateCarouselSize);
     return () => media.removeEventListener("change", updateCarouselSize);
   }, []);
+
+  useEffect(() => {
+    if (!compactCarousel || activeVideo || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const advanceIfIdle = (
+      setSlide: React.Dispatch<React.SetStateAction<number>>,
+      length: number,
+      selector: string,
+    ) => {
+      const rail = document.querySelector(selector);
+      if (document.hidden || rail?.classList.contains("is-touching")) return;
+      advanceMobileRail(setSlide, length, selector);
+    };
+
+    const creationTimer = window.setInterval(
+      () => advanceIfIdle(setCreationSlide, creationGalleryVideos.length, ".story-rail--creations"),
+      3400,
+    );
+    const proofTimer = window.setInterval(
+      () => advanceIfIdle(setMobileSlide, carouselVideos.length, ".story-rail--videos"),
+      3800,
+    );
+
+    return () => {
+      window.clearInterval(creationTimer);
+      window.clearInterval(proofTimer);
+    };
+  }, [activeVideo, compactCarousel]);
 
   useEffect(() => {
     document.body.style.overflow = activeVideo ? "hidden" : "";
@@ -478,7 +475,7 @@ export default function Home() {
         <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
           <div className="story-rail__track" style={compactCarousel?{transform:`translate3d(-${creationSlide*187}px,0,0)`}:undefined}>{(()=>{const sequence=compactCarousel?creationGalleryVideos:[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
-        <div className="mobile-video-controls" aria-label="Navegação da galeria de criações"><button type="button" onClick={previousCreationVideo} aria-label="Criação anterior">←</button><span>{creationGalleryVideos.map((video,index)=><i key={video.src} className={creationSlide%creationGalleryVideos.length===index?"is-active":""}/>)}</span><button type="button" onClick={nextCreationVideo} aria-label="Próxima criação">→</button></div>
+        <div className="mobile-video-progress" aria-label="Posição na galeria de criações"><span>{creationGalleryVideos.map((video,index)=><i key={video.src} className={creationSlide%creationGalleryVideos.length===index?"is-active":""}/>)}</span></div>
       </div>
       <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><Image src={src} width={1600} height={1000} sizes="(max-width: 700px) 90vw, 50vw" alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
@@ -498,7 +495,7 @@ export default function Home() {
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
           <div className="story-rail__track" style={compactCarousel ? { transform: `translate3d(-${mobileSlide * 187}px,0,0)` } : undefined}>{(()=>{ const sequence = compactCarousel ? carouselVideos : [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
-        <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={previousMobileVideo} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span><button type="button" onClick={nextMobileVideo} aria-label="Próximo vídeo">→</button></div>
+        <div className="mobile-video-progress" aria-label="Posição no carrossel de vídeos"><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span></div>
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span></div>
           <div className="proof-orbit__viewport" onTouchStart={handleProofTouchStart} onTouchEnd={handleProofTouchEnd} onTouchCancel={()=>{ proofTouchRef.current = null; }}>
