@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import Image from "next/image";
 import type { IconType } from "react-icons";
 import { SiInstagram, SiMercadopago, SiShopee, SiTiktok, SiYoutube } from "react-icons/si";
 import { FaAmazon } from "react-icons/fa";
@@ -100,6 +101,16 @@ const carouselVideos = [
   { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
 ];
 
+const creationGalleryVideos = [
+  { src: "/assets/videos/creation-gallery-cookware.mp4", poster: "/assets/videos/creation-gallery-cookware-poster.jpg", label: "Criação Voomi — conjunto de panelas" },
+  { src: "/assets/videos/creation-gallery-01.mp4", poster: "/assets/videos/creation-gallery-01-poster.jpg", label: "Criação Voomi 01" },
+  { src: "/assets/videos/creation-gallery-02.mp4", poster: "/assets/videos/creation-gallery-02-poster.jpg", label: "Criação Voomi 02" },
+  { src: "/assets/videos/creation-gallery-03.mp4", poster: "/assets/videos/creation-gallery-03-poster.jpg", label: "Criação Voomi 03" },
+  { src: "/assets/videos/creation-gallery-04.mp4", poster: "/assets/videos/creation-gallery-04-poster.jpg", label: "Criação Voomi 04" },
+];
+
+const videoWarmCache = new Map<string, HTMLVideoElement>();
+
 const proofShots = [
   { src: "/assets/proofs/proof-primeira-venda.jpeg", metric: "Primeira venda", label: "Começou a postar e a primeira venda saiu" },
   { src: "/assets/proofs/proof-512-vinte-vendas.jpeg", metric: "R$ 512,87", label: "20 produtos vendidos em 7 dias" },
@@ -114,15 +125,11 @@ function MarketLogo({ name, brand, Icon, wordmark }: { name: string; brand: stri
 }
 
 function Brand() {
-  return <a className="brand" href="#inicio" aria-label="Voomi — início"><img src="/favicon-512.png" alt="" /><span>voomi</span></a>;
+  return <a className="brand" href="#inicio" aria-label="Voomi — início"><Image src="/favicon-512.png" width={512} height={512} alt="" /><span>voomi</span></a>;
 }
 
 function CTA({ children, href = "#oferta", compact = false }: { children: React.ReactNode; href?: string; compact?: boolean }) {
   return <a className={`cta ${compact ? "cta--compact" : ""}`} href={href}><span>{children}</span><b aria-hidden="true">↗</b></a>;
-}
-
-function Placeholder({ label, className = "", src }: { label: string; className?: string; src?: string }) {
-  return <div className={`placeholder ${className} ${src ? "placeholder--media" : ""}`}>{src ? <><img src={src} alt={label} /><span className="placeholder__media-label">{label}</span></> : <><span className="placeholder__corners" /><div className="placeholder__icon">▶</div><small>ESPAÇO RESERVADO</small><strong>{label}</strong></>}</div>;
 }
 
 export default function Home() {
@@ -131,6 +138,7 @@ export default function Home() {
   const [faq, setFaq] = useState(0);
   const [compactCarousel, setCompactCarousel] = useState(false);
   const [mobileSlide, setMobileSlide] = useState(0);
+  const [creationSlide, setCreationSlide] = useState(0);
   const [painSlide, setPainSlide] = useState(0);
   const [proofSlide, setProofSlide] = useState(0);
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
@@ -139,7 +147,6 @@ export default function Home() {
   const painTrackRef = useRef<HTMLDivElement>(null);
   const painWheelLockRef = useRef(false);
   const proofTouchRef = useRef<{ x: number; y: number } | null>(null);
-  const warmedVideos = useRef(new Map<string, HTMLVideoElement>());
 
   const goToPain = (index: number) => {
     const next = (index + pains.length) % pains.length;
@@ -181,12 +188,12 @@ export default function Home() {
   }, [painSlide]);
 
   const warmVideo = (src: string) => {
-    if (warmedVideos.current.has(src) || warmedVideos.current.size >= 3) return;
+    if (videoWarmCache.has(src) || videoWarmCache.size >= 3) return;
     const video = document.createElement("video");
     video.preload = "auto";
     video.src = src;
     video.muted = true;
-    warmedVideos.current.set(src, video);
+    videoWarmCache.set(src, video);
     video.load();
   };
 
@@ -217,6 +224,31 @@ export default function Home() {
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
       document.querySelector(".story-rail--videos")?.classList.remove("is-resetting");
       setMobileSlide(carouselVideos.length - 1);
+    }));
+  };
+
+  const nextCreationVideo = () => {
+    const next = creationSlide + 1;
+    setCreationSlide(next);
+    if (next === creationGalleryVideos.length) {
+      window.setTimeout(() => {
+        document.querySelector(".story-rail--creations")?.classList.add("is-resetting");
+        setCreationSlide(0);
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(".story-rail--creations")?.classList.remove("is-resetting")));
+      }, 500);
+    }
+  };
+
+  const previousCreationVideo = () => {
+    if (creationSlide > 0) {
+      setCreationSlide(creationSlide - 1);
+      return;
+    }
+    document.querySelector(".story-rail--creations")?.classList.add("is-resetting");
+    setCreationSlide(creationGalleryVideos.length);
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.querySelector(".story-rail--creations")?.classList.remove("is-resetting");
+      setCreationSlide(creationGalleryVideos.length - 1);
     }));
   };
 
@@ -345,7 +377,7 @@ export default function Home() {
 
     <section className="hero hero--no-vsl container section">
       <div className="hero__brand-field" aria-hidden="true">
-        {Array.from({ length: 18 }, (_, index) => <i key={index}><img src="/favicon-512.png" alt="" /></i>)}
+        {Array.from({ length: 18 }, (_, index) => <i key={index}><Image src="/favicon-512.png" width={512} height={512} alt="" /></i>)}
       </div>
       <div className="hero__eyebrow"><span>SEM APARECER</span><span>SEM GRAVAR</span><span>SEM EDITOR</span></div>
       <div className="hero__copy">
@@ -375,7 +407,7 @@ export default function Home() {
 
     <section className="section pains" data-reveal>
       <div className="unlock-shell container">
-        <header className="unlock-intro section-head left"><span>01 — DESTRAVE</span><h2>Você não trava por falta de vontade.<br /><em>Trava sempre nos mesmos lugares.</em></h2></header>
+        <header className="unlock-intro section-head left"><span>01 — DESTRAVE</span><h2>Você não trava por falta de vontade.<br className="unlock-intro__desktop-break" />{" "}<em>Trava sempre nos mesmos lugares.</em></h2></header>
         <div className="pain-carousel" ref={painCarouselRef}><div className="pain-grid" ref={painTrackRef} style={{ transform: `translate3d(-${painSlide * 100}%,0,0)` }}>{pains.map(([q,a],i)=><article key={q} className="pain-card"><div className="pain-card__number">0{i+1}</div><div className="pain-card__content"><div className="pain-card__problem"><small>O BLOQUEIO</small><h3>“{q}”</h3></div><div className="card-solution"><small>A SAÍDA</small><p>{a}</p></div></div></article>)}</div></div>
         <div className="pain-controls"><div>{pains.map(([,],i)=><button key={i} type="button" className={painSlide===i?"is-active":""} onClick={()=>goToPain(i)} aria-label={`Ir para bloqueio ${i+1}`} />)}</div><span><button type="button" onClick={()=>goToPain(painSlide-1)} aria-label="Bloqueio anterior">←</button><button type="button" onClick={()=>goToPain(painSlide+1)} aria-label="Próximo bloqueio">→</button></span></div>
         <div className="unlock-manifesto"><p>Não é ferramenta pra uma etapa. <strong>É a operação inteira, do produto ao vídeo postado.</strong></p></div>
@@ -392,11 +424,11 @@ export default function Home() {
           <strong>A boa notícia: você não precisa mais começar da câmera.</strong>
         </div>
         <div className="outcome-bridge__visual" aria-label="Espaços reservados para criativos e provas de venda">
-          <div className="floating-video floating-video--one"><img src="/assets/voomi-outcome-product.webp" alt="Massageador portátil em criativo vertical" /><small>PRODUTO REAL</small></div>
-          <div className="floating-video floating-video--two"><img src="/assets/voomi-outcome-avatar.webp" alt="Criador demonstrando o massageador portátil" /><small>CRIATIVO COM AVATAR</small></div>
-          <div className="proof-stack">
-            <span>RESULTADOS RECENTES</span>
-            {[["Mariana S.", "R$ 189,70"], ["Carlos M.", "R$ 327,40"], ["Ana C.", "R$ 94,50"]].map(([name, value]) => <div key={name}><i>✓</i><p>Venda realizada<small>{name}</small></p><b>{value}</b></div>)}
+          <div className="floating-video floating-video--one"><Image src="/assets/voomi-outcome-product.webp" fill sizes="(max-width: 600px) 40vw, 220px" alt="Massageador portátil em criativo vertical" /><small>PRODUTO REAL</small></div>
+          <div className="outcome-bridge__arrow" role="img" aria-label="Do produto real para o criativo com avatar">→</div>
+          <div className="floating-video floating-video--two"><Image src="/assets/voomi-outcome-avatar.webp" fill sizes="(max-width: 600px) 40vw, 220px" alt="Criador demonstrando o massageador portátil" /><small>CRIATIVO COM AVATAR</small></div>
+          <div className="proof-stack proof-stack--screenshot">
+            <Image src="/assets/proof-tiktok-shop-results.jpeg" fill sizes="(max-width: 600px) 90vw, 460px" alt="Resultados do TikTok Shop com GMV atribuído de R$ 5,3 mil, 93 itens vendidos e comissão estimada de R$ 538,80" />
           </div>
         </div>
       </div>
@@ -415,11 +447,29 @@ export default function Home() {
 
     <section id="plataforma" className="container section platform" data-reveal>
       <div className="section-head"><span>03 — A PLATAFORMA</span><h2>Não é uma ferramenta.<br /><em>É a operação inteira na sua mão.</em></h2><p>Do produto vencedor ao vídeo pronto. Sem aparecer, sem editor, sem sair daqui.</p></div>
-      <article className="creator">
-        <div className="creator__copy"><span className="chip">MÓDULO PRINCIPAL</span><small>CREATOR LAB</small><h3>Onde o produto<br />vira <em>vídeo.</em></h3><p>Escolha o produto, o avatar, a voz e o cenário. A Voomi monta tudo e entrega o vídeo pronto pra postar.</p><ul><li>Avatar no seu lugar</li><li>Voz e movimento por IA</li><li>Seu rosto nunca aparece</li></ul></div>
-        <div className="creator__visual"><Placeholder label="ANTES — FOTO DO PRODUTO" className="before" src="/assets/voomi-product-creative.webp" /><span>→</span><Placeholder label="DEPOIS — CRIATIVO COM AVATAR" className="after" src="/assets/voomi-avatar-creative.webp" /></div>
+      <article className="creator creator--pipeline">
+        <div className="creator__copy creator__copy--pipeline">
+          <div><span className="chip">MÓDULO PRINCIPAL</span><small>CREATOR LAB</small><h3>Onde tudo<br />vira <em>vídeo.</em></h3></div>
+          <div className="creator__copy-details"><p>Escolha o cenário, o produto e o avatar. A Voomi combina tudo e entrega o vídeo pronto pra postar.</p><ul><li>Cenário definido por você</li><li>Avatar no seu lugar</li><li>Vídeo final pronto para vender</li></ul></div>
+        </div>
+        <div className="creator__visual creator-pipeline" aria-label="Cenário, produto e avatar transformados em um vídeo pronto">
+          <figure className="creator-pipeline__card creator-pipeline__card--scenario"><Image src="/assets/creator-lab-scenario.png" fill sizes="(max-width: 700px) 85vw, 240px" alt="Cenário de uma garagem com motocicletas" /><figcaption><small>01</small><strong>CENÁRIO</strong></figcaption></figure>
+          <span aria-hidden="true">→</span>
+          <figure className="creator-pipeline__card creator-pipeline__card--product"><Image src="/assets/creator-lab-product.jpeg" fill sizes="(max-width: 700px) 85vw, 240px" alt="Jaqueta preta escolhida como produto" /><figcaption><small>02</small><strong>PRODUTO</strong></figcaption></figure>
+          <span aria-hidden="true">→</span>
+          <figure className="creator-pipeline__card creator-pipeline__card--avatar"><Image src="/assets/creator-lab-avatar.png" fill sizes="(max-width: 700px) 85vw, 240px" alt="Avatar masculino escolhido para apresentar o produto" /><figcaption><small>03</small><strong>AVATAR</strong></figcaption></figure>
+          <span aria-hidden="true">→</span>
+          <figure className="creator-pipeline__card creator-pipeline__card--result"><video src="/assets/creator-lab-result.mp4" aria-label="Vídeo final criado com o cenário, o produto e o avatar" autoPlay muted loop playsInline controls preload="metadata" /><figcaption><small>04</small><strong>VÍDEO PRONTO</strong></figcaption></figure>
+        </div>
       </article>
-      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><img src={src} alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
+      <div className="creation-gallery">
+        <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi. Clique em qualquer vídeo para assistir com som.</p></header>
+        <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
+          <div className="story-rail__track" style={compactCarousel?{transform:`translate3d(-${creationSlide*187}px,0,0)`}:undefined}>{(()=>{const sequence=compactCarousel?creationGalleryVideos:[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+        </div>
+        <div className="mobile-video-controls" aria-label="Navegação da galeria de criações"><button type="button" onClick={previousCreationVideo} aria-label="Criação anterior">←</button><span>{creationGalleryVideos.map((video,index)=><i key={video.src} className={creationSlide%creationGalleryVideos.length===index?"is-active":""}/>)}</span><button type="button" onClick={nextCreationVideo} aria-label="Próxima criação">→</button></div>
+      </div>
+      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><Image src={src} width={1600} height={1000} sizes="(max-width: 700px) 90vw, 50vw" alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
     </section>
 
@@ -441,7 +491,7 @@ export default function Home() {
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span><i>● SISTEMA AO VIVO</i></div>
           <div className="proof-orbit__viewport" onTouchStart={handleProofTouchStart} onTouchEnd={handleProofTouchEnd} onTouchCancel={()=>{ proofTouchRef.current = null; }}>
-            {proofShots.map((proof,index)=>{ const raw=index-proofSlide; const offset=raw>proofShots.length/2?raw-proofShots.length:raw<-proofShots.length/2?raw+proofShots.length:raw; return <button type="button" key={proof.src} className={`proof-orbit__shot ${offset===0?"is-active":""}`} style={{"--offset":offset} as React.CSSProperties} onClick={()=>setProofSlide(index)} aria-label={`Ver prova: ${proof.label}`} aria-current={offset===0?"true":undefined}><img src={proof.src} alt={proof.label} /></button>})}
+            {proofShots.map((proof,index)=>{ const raw=index-proofSlide; const offset=raw>proofShots.length/2?raw-proofShots.length:raw<-proofShots.length/2?raw+proofShots.length:raw; return <button type="button" key={proof.src} className={`proof-orbit__shot ${offset===0?"is-active":""}`} style={{"--offset":offset} as React.CSSProperties} onClick={()=>setProofSlide(index)} aria-label={`Ver prova: ${proof.label}`} aria-current={offset===0?"true":undefined}><Image src={proof.src} fill sizes="(max-width: 700px) 72vw, 390px" alt={proof.label} /></button>})}
           </div>
           <div className="proof-orbit__readout"><div><strong>RESULTADOS REAIS</strong><p>{proofShots[proofSlide].label}</p></div><span><button type="button" onClick={()=>setProofSlide((proofSlide-1+proofShots.length)%proofShots.length)} aria-label="Prova anterior">←</button><button type="button" onClick={()=>setProofSlide((proofSlide+1)%proofShots.length)} aria-label="Próxima prova">→</button></span></div>
           <div className="proof-orbit__dots">{proofShots.map((proof,index)=><button type="button" key={proof.src} className={proofSlide===index?"is-active":""} onClick={()=>setProofSlide(index)} aria-label={`Ir para prova ${index+1}`} />)}</div>
@@ -481,6 +531,6 @@ export default function Home() {
 
     <footer className="container footer"><Brand /><p>Vídeos que vendem. Sem você aparecer.</p><span>© 2026 Voomi. Todos os direitos reservados.</span></footer>
 
-    {activeVideo && <div className={`video-lightbox ${videoReady ? "is-ready" : "is-loading"}`} role="dialog" aria-modal="true" aria-label={activeVideo.label} onClick={() => setActiveVideo(null)}><button type="button" onClick={() => setActiveVideo(null)} aria-label="Fechar vídeo">×</button><div className="video-lightbox__stage" onClick={(event) => event.stopPropagation()}><video key={activeVideo.src} src={activeVideo.src} poster={activeVideo.poster} preload="auto" controls autoPlay playsInline onCanPlay={() => setVideoReady(true)} /><span className="video-lightbox__loading" aria-live="polite">Carregando vídeo…</span></div></div>}
+    {activeVideo && <div className={`video-lightbox ${videoReady ? "is-ready" : "is-loading"}`} role="dialog" aria-modal="true" aria-label={activeVideo.label}><button type="button" onClick={() => setActiveVideo(null)} aria-label="Fechar vídeo">×</button><div className="video-lightbox__stage"><video key={activeVideo.src} src={activeVideo.src} poster={activeVideo.poster} preload="auto" controls autoPlay playsInline onCanPlay={() => setVideoReady(true)} /><span className="video-lightbox__loading" aria-live="polite">Carregando vídeo…</span></div></div>}
   </main>;
 }
