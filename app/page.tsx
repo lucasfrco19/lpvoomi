@@ -137,8 +137,6 @@ export default function Home() {
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0);
   const [compactCarousel, setCompactCarousel] = useState(false);
-  const [mobileSlide, setMobileSlide] = useState(0);
-  const [creationSlide, setCreationSlide] = useState(0);
   const [painSlide, setPainSlide] = useState(0);
   const [proofSlide, setProofSlide] = useState(0);
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
@@ -213,25 +211,6 @@ export default function Home() {
     void video.play().catch(() => undefined);
   };
 
-  const advanceMobileRail = (
-    setSlide: React.Dispatch<React.SetStateAction<number>>,
-    length: number,
-    selector: string,
-  ) => {
-    setSlide((current) => {
-      if (current >= length) return current;
-      const next = current + 1;
-      if (next === length) {
-        window.setTimeout(() => {
-          document.querySelector(selector)?.classList.add("is-resetting");
-          setSlide(0);
-          window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.querySelector(selector)?.classList.remove("is-resetting")));
-        }, 500);
-      }
-      return next;
-    });
-  };
-
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
     const updateCarouselSize = () => setCompactCarousel(media.matches);
@@ -239,34 +218,6 @@ export default function Home() {
     media.addEventListener("change", updateCarouselSize);
     return () => media.removeEventListener("change", updateCarouselSize);
   }, []);
-
-  useEffect(() => {
-    if (!compactCarousel || activeVideo || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const advanceIfIdle = (
-      setSlide: React.Dispatch<React.SetStateAction<number>>,
-      length: number,
-      selector: string,
-    ) => {
-      const rail = document.querySelector(selector);
-      if (document.hidden || rail?.classList.contains("is-touching")) return;
-      advanceMobileRail(setSlide, length, selector);
-    };
-
-    const creationTimer = window.setInterval(
-      () => advanceIfIdle(setCreationSlide, creationGalleryVideos.length, ".story-rail--creations"),
-      3400,
-    );
-    const proofTimer = window.setInterval(
-      () => advanceIfIdle(setMobileSlide, carouselVideos.length, ".story-rail--videos"),
-      3800,
-    );
-
-    return () => {
-      window.clearInterval(creationTimer);
-      window.clearInterval(proofTimer);
-    };
-  }, [activeVideo, compactCarousel]);
 
   useEffect(() => {
     document.body.style.overflow = activeVideo ? "hidden" : "";
@@ -473,9 +424,8 @@ export default function Home() {
       <div className="creation-gallery">
         <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi. Clique em qualquer vídeo para assistir com som.</p></header>
         <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
-          <div className="story-rail__track" style={compactCarousel?{transform:`translate3d(-${creationSlide*187}px,0,0)`}:undefined}>{(()=>{const sequence=compactCarousel?creationGalleryVideos:[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{const sequence=[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
-        <div className="mobile-video-progress" aria-label="Posição na galeria de criações"><span>{creationGalleryVideos.map((video,index)=><i key={video.src} className={creationSlide%creationGalleryVideos.length===index?"is-active":""}/>)}</span></div>
       </div>
       <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><Image src={src} width={1600} height={1000} sizes="(max-width: 700px) 90vw, 50vw" alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
@@ -493,9 +443,8 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p className="proof-summary">Nenhum apareceu na câmera. Nenhum tinha experiência.<strong>A diferença é que eles começaram.</strong></p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track" style={compactCarousel ? { transform: `translate3d(-${mobileSlide * 187}px,0,0)` } : undefined}>{(()=>{ const sequence = compactCarousel ? carouselVideos : [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1 : 0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{ const sequence = [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1:0}><video data-src={video.src} poster={video.poster} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
-        <div className="mobile-video-progress" aria-label="Posição no carrossel de vídeos"><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span></div>
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span></div>
           <div className="proof-orbit__viewport" onTouchStart={handleProofTouchStart} onTouchEnd={handleProofTouchEnd} onTouchCancel={()=>{ proofTouchRef.current = null; }}>
