@@ -143,10 +143,12 @@ export default function Home() {
   const [proofSlide, setProofSlide] = useState(0);
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
   const [videoReady, setVideoReady] = useState(false);
+  const [resultVideoSoundOn, setResultVideoSoundOn] = useState(false);
   const painCarouselRef = useRef<HTMLDivElement>(null);
   const painTrackRef = useRef<HTMLDivElement>(null);
   const painWheelLockRef = useRef(false);
   const proofTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const resultVideoRef = useRef<HTMLVideoElement>(null);
 
   const goToPain = (index: number) => {
     const next = (index + pains.length) % pains.length;
@@ -200,6 +202,15 @@ export default function Home() {
   const openVideo = (video: (typeof carouselVideos)[number]) => {
     setVideoReady(false);
     setActiveVideo(video);
+  };
+
+  const enableResultVideoSound = () => {
+    const video = resultVideoRef.current;
+    if (!video) return;
+    video.muted = false;
+    video.volume = 1;
+    setResultVideoSoundOn(true);
+    void video.play().catch(() => undefined);
   };
 
   const nextMobileVideo = () => {
@@ -459,7 +470,7 @@ export default function Home() {
           <span aria-hidden="true">→</span>
           <figure className="creator-pipeline__card creator-pipeline__card--avatar"><Image src="/assets/creator-lab-avatar.png" fill sizes="(max-width: 700px) 85vw, 240px" alt="Avatar masculino escolhido para apresentar o produto" /><figcaption><small>03</small><strong>AVATAR</strong></figcaption></figure>
           <span aria-hidden="true">→</span>
-          <figure className="creator-pipeline__card creator-pipeline__card--result"><video src="/assets/creator-lab-result.mp4" aria-label="Vídeo final criado com o cenário, o produto e o avatar" autoPlay muted loop playsInline controls preload="metadata" /><figcaption><small>04</small><strong>VÍDEO PRONTO</strong></figcaption></figure>
+          <figure className="creator-pipeline__card creator-pipeline__card--result"><video ref={resultVideoRef} src="/assets/creator-lab-result.mp4" aria-label="Vídeo final criado com o cenário, o produto e o avatar" autoPlay muted={!resultVideoSoundOn} loop playsInline controls preload="metadata" onVolumeChange={(event)=>setResultVideoSoundOn(!event.currentTarget.muted&&event.currentTarget.volume>0)} />{!resultVideoSoundOn&&<button type="button" className="creator-pipeline__sound" onClick={enableResultVideoSound} aria-label="Ativar som do vídeo final"><span aria-hidden="true">♪</span>ATIVAR SOM</button>}<figcaption><small>04</small><strong>VÍDEO PRONTO</strong></figcaption></figure>
         </div>
       </article>
       <div className="creation-gallery">
@@ -489,7 +500,7 @@ export default function Home() {
         </div>
         <div className="mobile-video-controls" aria-label="Navegação dos vídeos"><button type="button" onClick={previousMobileVideo} aria-label="Vídeo anterior">←</button><span>{carouselVideos.map((video, index) => <i key={video.src} className={mobileSlide % carouselVideos.length === index ? "is-active" : ""} />)}</span><button type="button" onClick={nextMobileVideo} aria-label="Próximo vídeo">→</button></div>
         <div className="proof-orbit">
-          <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span><i>● SISTEMA AO VIVO</i></div>
+          <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span></div>
           <div className="proof-orbit__viewport" onTouchStart={handleProofTouchStart} onTouchEnd={handleProofTouchEnd} onTouchCancel={()=>{ proofTouchRef.current = null; }}>
             {proofShots.map((proof,index)=>{ const raw=index-proofSlide; const offset=raw>proofShots.length/2?raw-proofShots.length:raw<-proofShots.length/2?raw+proofShots.length:raw; return <button type="button" key={proof.src} className={`proof-orbit__shot ${offset===0?"is-active":""}`} style={{"--offset":offset} as React.CSSProperties} onClick={()=>setProofSlide(index)} aria-label={`Ver prova: ${proof.label}`} aria-current={offset===0?"true":undefined}><Image src={proof.src} fill sizes="(max-width: 700px) 72vw, 390px" alt={proof.label} /></button>})}
           </div>

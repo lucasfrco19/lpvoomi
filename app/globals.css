@@ -800,6 +800,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .creator-pipeline__card--product img{object-fit:contain}
 .creator-pipeline__card--avatar img{object-position:center 28%}
 .creator-pipeline__card--result{border-color:rgba(46,224,141,.72);box-shadow:0 28px 70px rgba(8,104,67,.24),0 0 0 4px rgba(46,224,141,.08)}
+.creator-pipeline__sound{display:none}
 .creator-pipeline__card figcaption{position:absolute;z-index:2;left:10px;right:10px;bottom:10px;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 7px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(4,12,8,.76);color:#fff;text-align:center;backdrop-filter:blur(9px);pointer-events:none}
 .creator-pipeline__card figcaption small{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--primary);color:#06130c;font-size:8px;font-weight:800}
 .creator-pipeline__card figcaption strong{font-size:8px;letter-spacing:.12em}
@@ -825,6 +826,8 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   .creator-pipeline{flex-direction:column;align-items:center;gap:16px;margin-inline:0;padding:24px 20px 44px;overflow:visible;scroll-snap-type:none}
   .creator-pipeline__card,.creator-pipeline__card:nth-of-type(1),.creator-pipeline__card:nth-of-type(2),.creator-pipeline__card:nth-of-type(3),.creator-pipeline__card:nth-of-type(4){flex:0 0 auto;width:min(100%,330px);aspect-ratio:3/4;transform:none}
   .creator-pipeline__card--result{width:min(100%,350px);margin-top:4px}
+  .creator-pipeline__sound{position:absolute;z-index:4;left:50%;bottom:52px;display:flex;align-items:center;gap:7px;transform:translateX(-50%);padding:9px 13px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(4,12,8,.84);color:#fff;font-size:8px;font-weight:800;letter-spacing:.1em;box-shadow:0 12px 26px rgba(0,0,0,.3);backdrop-filter:blur(10px)}
+  .creator-pipeline__sound span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--primary);color:#06130c;font-size:12px}
   .creator-pipeline>span{flex:0 0 38px;width:38px;height:38px;transform:rotate(90deg)}
   .platform .feature-grid .module-row,.platform .feature-grid .module-row:nth-child(even){display:flex;flex-direction:column;gap:28px}
   .platform .feature-grid .module-row .module-row__copy,.platform .feature-grid .module-row:nth-child(even) .module-row__copy{order:1;max-width:none}
