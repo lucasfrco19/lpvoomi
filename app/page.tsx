@@ -26,12 +26,62 @@ const pains = [
   ["Já gastei dinheiro e não deu em nada.", "Aqui é vitalício. Paga uma vez, é seu. Você só investe quando resolve criar."],
 ];
 
-const features = [
-  ["Radar de produtos", "Encontre produtos validados, comissão, vendas e crescimento. Um clique manda tudo para o Creator Lab.", "RADAR", "/assets/module-radar-full.webp"],
-  ["Viral Boost", "Crie historinhas virais para crescer a conta e alcançar os primeiros seguidores que destravam sua loja.", "BOOST", "/assets/module-boost-full.webp"],
-  ["Personalize IA", "Crie avatares e cenários ilimitados. Sua foto pode virar avatar — seu rosto real não precisa aparecer.", "AVATAR", "/assets/module-avatar-full.webp"],
-  ["Lab Studio", "Corte, divida cenas, ajuste, legende e exporte no navegador. Sem CapCut. Sem Premiere.", "STUDIO", "/assets/module-studio-full.webp"],
-];
+const featureDemos = [
+  {
+    id: "radar",
+    title: "Radar de produtos",
+    tag: "RADAR",
+    description: "Encontre produtos validados, compare o potencial e leve a melhor oportunidade direto para a criação.",
+    src: "/assets/module-radar-full.webp",
+    benefits: ["Compare vendas, comissão e crescimento", "Filtre oportunidades em segundos", "Envie o produto direto para a criação"],
+    outcome: "Você sai da dúvida com um produto escolhido e pronto para virar conteúdo.",
+    screenActions: [
+      { label: "Buscar produto", result: "Busca ativada: produtos em crescimento", x: 19.8, y: 42.1, width: 49.7, height: 5.5 },
+      { label: "Ordenar por faturamento", result: "Resultados ordenados pelo maior faturamento", x: 70.4, y: 42.1, width: 16.6, height: 5.5 },
+      { label: "Selecionar produto líder", result: "Conjunto de panelas selecionado para criação", x: 19.8, y: 50.4, width: 18.5, height: 35.3 },
+    ],
+  },
+  {
+    id: "boost",
+    title: "Viral Boost",
+    tag: "BOOST",
+    description: "Transforme uma ideia simples em uma história curta, pensada para prender atenção e fazer a conta crescer.",
+    src: "/assets/module-boost-full.webp",
+    benefits: ["Transforme uma ideia em um hook forte", "Estruture histórias curtas com ritmo", "Gere roteiros pensados para retenção"],
+    outcome: "Uma ideia simples vira um roteiro organizado, pronto para entrar em produção.",
+    screenActions: [
+      { label: "Escolher etapa Frutas", result: "Etapa 1 aberta: escolha de personagens", x: 20.8, y: 48.8, width: 7.2, height: 5.5 },
+      { label: "Usar Historinhas de Fruta", result: "Categoria pronta para gerar o roteiro", x: 22.7, y: 79.2, width: 35.6, height: 6.7 },
+    ],
+  },
+  {
+    id: "avatar",
+    title: "Personalize IA",
+    tag: "AVATAR",
+    description: "Defina quem apresenta, onde a cena acontece e mantenha uma identidade visual consistente sem aparecer.",
+    src: "/assets/module-avatar-full.webp",
+    benefits: ["Escolha o avatar e o estilo da marca", "Defina cenários para cada campanha", "Mantenha consistência sem aparecer"],
+    outcome: "Sua criação ganha uma identidade reconhecível sem depender da sua imagem.",
+    screenActions: [
+      { label: "Ver Influencers", result: "Biblioteca de influencers aberta", x: 19.5, y: 29.6, width: 11.2, height: 6.9 },
+      { label: "Ver Cenários", result: "Biblioteca de cenários aberta", x: 30.5, y: 29.6, width: 10.4, height: 6.9 },
+      { label: "Criar com IA", result: "Fluxo de criação de influencer iniciado", x: 19.5, y: 38.4, width: 10.1, height: 5.5 },
+      { label: "Enviar imagem", result: "Seletor de imagem preparado para envio", x: 30.5, y: 38.4, width: 11.4, height: 5.5 },
+    ],
+  },
+  {
+    id: "studio",
+    title: "Lab Studio",
+    tag: "STUDIO",
+    description: "Faça os ajustes finais, adapte o formato e exporte o criativo sem depender de um editor externo.",
+    src: "/assets/module-studio-full.webp",
+    benefits: ["Ajuste o vídeo para cada canal", "Finalize sem um editor externo", "Exporte no formato pronto para publicar"],
+    outcome: "O vídeo termina no formato certo para TikTok, Reels, Shopee ou YouTube.",
+    screenActions: [
+      { label: "Selecionar vídeo", result: "Área de upload ativada para escolher um vídeo", x: 32.3, y: 47.1, width: 52.6, height: 38 },
+    ],
+  },
+] as const;
 
 const people = [
   ["01", "Quer uma renda a mais, mas não quer aparecer", "O avatar aparece por você. Você vende no anonimato."],
@@ -71,6 +121,14 @@ const plans = [
     cta: "Quero acesso vitalício",
     featured: true,
   },
+];
+
+const toolCosts = [
+  { logo: "https://framerusercontent.com/images/xr1ctABU48XZiPCvjONXa98d48.png", name: "Minea Starter", purpose: "Pesquisa de produtos", price: "R$ 255,01" },
+  { logo: "https://www.heygen.com/favicon.ico", name: "HeyGen Creator", purpose: "Avatares e vídeos", price: "R$ 150,92" },
+  { logo: "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg", name: "ChatGPT Plus", purpose: "Ideias e roteiros", price: "R$ 104,09" },
+  { logo: "https://sf16-web-tos-buz.capcutstatic.com/obj/capcut-web-buz-sg/common/images/lv_web-2.ico", name: "CapCut Pro", purpose: "Edição de vídeo", price: "R$ 104,03" },
+  { logo: "https://www.canva.com/favicon.ico", name: "Canva Pro", purpose: "Design e criativos", price: "R$ 62,45" },
 ];
 
 const faqs = [
@@ -139,6 +197,9 @@ export default function Home() {
   const [compactCarousel, setCompactCarousel] = useState(false);
   const [painSlide, setPainSlide] = useState(0);
   const [proofSlide, setProofSlide] = useState(0);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [coupon, setCoupon] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
   const [activeVideo, setActiveVideo] = useState<(typeof carouselVideos)[number] | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [resultVideoSoundOn, setResultVideoSoundOn] = useState(false);
@@ -147,6 +208,19 @@ export default function Home() {
   const painWheelLockRef = useRef(false);
   const proofTouchRef = useRef<{ x: number; y: number } | null>(null);
   const resultVideoRef = useRef<HTMLVideoElement>(null);
+
+  const selectFeature = (index: number) => {
+    setActiveFeature((index + featureDemos.length) % featureDemos.length);
+  };
+
+  const applyCoupon = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedCoupon = coupon.trim().toUpperCase();
+    if (!normalizedCoupon) return;
+    setCoupon(normalizedCoupon);
+    window.localStorage.setItem("voomi-coupon", normalizedCoupon);
+    setCouponMessage("Código registrado. A validação final acontece no pagamento.");
+  };
 
   const goToPain = (index: number) => {
     const next = (index + pains.length) % pains.length;
@@ -298,7 +372,7 @@ export default function Home() {
       sections.forEach((section) => {
         section.classList.add("is-visible");
         const heading = section.querySelector(".section-head, .faq__intro");
-        const cards = section.querySelectorAll(":scope .pain-card, :scope .audience-card, :scope .pricing-card, :scope .feature-grid > article, :scope .proof-grid > div");
+        const cards = section.querySelectorAll(":scope .pain-card, :scope .audience-card, :scope .pricing-card, :scope .product-tour, :scope .proof-grid > div");
         if (heading) gsap.from(heading, { y: 38, autoAlpha: 0, duration: 0.85, scrollTrigger: { trigger: section, start: "top 82%", once: true } });
         if (cards.length) gsap.from(cards, { y: 46, autoAlpha: 0, duration: 0.72, stagger: 0.09, ease: "power3.out", scrollTrigger: { trigger: cards[0], start: "top 88%", once: true } });
       });
@@ -322,6 +396,7 @@ export default function Home() {
     };
   }, []);
 
+  const currentFeature = featureDemos[activeFeature];
   return <main id="inicio" ref={pageRef}>
     <div className="ambient" aria-hidden="true"><i /><i /><i /></div>
     <header className="nav-wrap">
@@ -427,7 +502,51 @@ export default function Home() {
           <div className="story-rail__track">{(()=>{const sequence=[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
       </div>
-      <div className="feature-grid">{features.map(([title,text,tag,src],i)=><article key={title} className="module-row"><div className="module-row__visual"><div className="feature-placeholder"><Image src={src} width={1600} height={1000} sizes="(max-width: 700px) 90vw, 50vw" alt={`Tela completa do módulo ${title}`} /></div></div><div className="module-row__copy"><div className="module-row__eyebrow"><span>0{i+1}</span><small>{tag}</small></div><h3>{title}</h3><p>{text}</p><ul><li>Fluxo simples e direto</li><li>Resultado pronto para usar</li><li>Tudo dentro da Voomi</li></ul><b>EXPLORAR MÓDULO ↗</b></div></article>)}</div>
+      <div className="product-tour">
+        <div className="product-tour__topline">
+          <div><span>CONHEÇA POR DENTRO</span><strong>Uma tela por vez. Uma função bem explicada.</strong></div>
+          <p>Escolha um módulo</p>
+        </div>
+
+        <div className="product-tour__tabs" role="tablist" aria-label="Módulos da plataforma">
+          {featureDemos.map((feature, index) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFeature === index}
+              aria-controls="product-tour-panel"
+              className={activeFeature === index ? "is-active" : ""}
+              key={feature.id}
+              onClick={() => selectFeature(index)}
+            >
+              <span>0{index + 1}</span>
+              <b>{feature.tag}</b>
+              <small>{feature.title}</small>
+            </button>
+          ))}
+        </div>
+
+        <div className="product-tour__panel" id="product-tour-panel" role="tabpanel">
+          <div className="product-tour__screen" key={currentFeature.id}>
+            <div className="product-tour__browserbar" aria-hidden="true"><i /><i /><i /><span>app.voomi.ai / {currentFeature.id}</span><b>AO VIVO</b></div>
+            <div className="product-tour__image">
+              <Image src={currentFeature.src} width={1600} height={1000} sizes="(max-width: 900px) 94vw, 66vw" alt={`Tela do módulo ${currentFeature.title}`} priority={false} style={{ width: "100%", height: "100%" }} />
+              <div className="product-tour__wash" aria-hidden="true" />
+            </div>
+          </div>
+
+          <aside className="product-tour__guide">
+            <header><span>0{activeFeature + 1} / 04 · {currentFeature.tag}</span><h3>{currentFeature.title}</h3><p>{currentFeature.description}</p></header>
+            <div className="product-tour__capabilities">
+              <small>O QUE ESTE MÓDULO RESOLVE</small>
+              <ul>{currentFeature.benefits.map((benefit, index) => <li key={benefit}><i>0{index + 1}</i><span>{benefit}</span></li>)}</ul>
+            </div>
+            <div className="product-tour__outcome"><span>RESULTADO</span><p>{currentFeature.outcome}</p></div>
+            <a className="product-tour__link" href="#planos"><span>Quero usar a Voomi</span><b aria-hidden="true">↗</b></a>
+            <footer className="product-tour__progress"><span><b style={{ width: `${((activeFeature + 1) / featureDemos.length) * 100}%` }} /></span><small>MÓDULO {activeFeature + 1} DE {featureDemos.length}</small></footer>
+          </aside>
+        </div>
+      </div>
       <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
     </section>
 
@@ -456,12 +575,40 @@ export default function Home() {
       </div>
     </section>
 
+    <section className="tool-cost section" data-reveal>
+      <div className="container">
+        <div className="tool-cost__head">
+          <span>FAÇA AS CONTAS</span>
+          <h2>Quanto custa montar essa operação<br /><em>com ferramentas separadas?</em></h2>
+          <p>Produto, roteiro, avatar, edição e design em cinco plataformas, cinco cobranças e cinco fluxos diferentes.</p>
+        </div>
+        <div className="tool-cost__layout">
+          <div className="tool-cost__list">
+            {toolCosts.map((tool) => <article key={tool.name}><i aria-hidden="true"><span style={{ backgroundImage: `url("${tool.logo}")` }} /></i><div><strong>{tool.name}</strong><span>{tool.purpose}</span></div><b>{tool.price}<small>/mês</small></b></article>)}
+            <footer><span>TOTAL DE REFERÊNCIA</span><strong>≈ R$ 676,51<small>/mês</small></strong><p>Mais de R$ 8.118 por ano em assinaturas separadas.</p></footer>
+          </div>
+          <aside className="tool-cost__voomi">
+            <span>COM A VOOMI</span>
+            <h3>Uma operação.<br />Um só fluxo.</h3>
+            <ul><li><i>✓</i> Radar de produtos</li><li><i>✓</i> Roteiros e Viral Boost</li><li><i>✓</i> Avatares e cenários com IA</li><li><i>✓</i> Criação e edição de vídeos</li></ul>
+            <div><small>A PARTIR DE</small><p><span>R$</span><strong>147</strong><b>/mês</b></p><em>ou R$ 697 em pagamento único</em></div>
+            <a href="#planos"><span>Ver planos da Voomi</span><b aria-hidden="true">↗</b></a>
+          </aside>
+        </div>
+        <p className="tool-cost__note">Conversão informativa pela PTAX de venda a R$ 5,2043, publicada pelo Banco Central em 18 de agosto de 2026. Preços, impostos, região e câmbio podem alterar os valores.</p>
+      </div>
+    </section>
+
     <section id="planos" className="container section pricing">
       <div className="section-head">
         <span>06 — ESCOLHA SEU PLANO</span>
         <h2>Comece agora. Continue<br /><em>do jeito que faz sentido pra você.</em></h2>
         <p>Imagens ilimitadas em qualquer plano. Escolha entre a flexibilidade mensal ou o acesso definitivo.</p>
       </div>
+      <form className="pricing-coupon" onSubmit={applyCoupon}>
+        <div><FiZap aria-hidden="true" /><input type="text" value={coupon} onChange={(event) => { setCoupon(event.target.value); setCouponMessage(""); }} maxLength={32} autoComplete="off" placeholder="TEM UM CUPOM?" aria-label="Código do cupom" /><button type="submit" disabled={!coupon.trim()}>Aplicar</button></div>
+        {couponMessage && <p role="status"><i>✓</i>{couponMessage}</p>}
+      </form>
       <div className="pricing-grid">
         {plans.map((plan) => <article className={`pricing-card ${plan.featured ? "pricing-card--featured" : ""}`} key={plan.name}>
           {plan.featured && <div className="pricing-card__badge"><FiZap aria-hidden="true" /> MAIS VANTAJOSO</div>}
