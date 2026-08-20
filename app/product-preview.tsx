@@ -22,7 +22,7 @@ const radarProducts = [
   { name: "Conjunto de panelas", sales: 4820, commission: 18, growth: 142, channel: "TikTok Shop", image: "/assets/videos/creation-gallery-cookware-poster.jpg" },
   { name: "Massageador portátil", sales: 3175, commission: 22, growth: 96, channel: "Shopee", image: "/assets/voomi-outcome-product.webp" },
   { name: "Jaqueta oversized", sales: 2614, commission: 15, growth: 71, channel: "Instagram", image: "/assets/creator-lab-product.jpeg" },
-  { name: "Tênis lifestyle", sales: 1988, commission: 12, growth: 54, channel: "Mercado Livre", image: "/assets/proofs/proof-feedback-tenis.jpeg" },
+  { name: "Tênis lifestyle", sales: 1988, commission: 12, growth: 54, channel: "Mercado Livre", image: "/assets/radar-sneaker-ai.webp" },
 ];
 
 const boostStories = [
