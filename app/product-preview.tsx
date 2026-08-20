@@ -34,8 +34,8 @@ const boostStories = [
 const avatars = [
   { name: "Maya", image: "/assets/avatar-ai-01.webp" },
   { name: "Leo", image: "/assets/creator-lab-avatar.png" },
-  { name: "Nina", image: "/assets/avatar-ai-02.webp" },
-  { name: "Caio", image: "/assets/avatar-ai-03.webp" },
+  { name: "Nina", image: "/assets/avatar-ai-03.webp" },
+  { name: "Caio", image: "/assets/avatar-ai-02.webp" },
 ];
 
 const scenes = [
