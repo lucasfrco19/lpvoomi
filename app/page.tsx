@@ -8,6 +8,7 @@ import { FaAmazon } from "react-icons/fa";
 import { FiShield, FiUserCheck, FiZap } from "react-icons/fi";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ProductPreview } from "./product-preview";
 
 const nav = [
   ["Como funciona", "#plataforma"],
@@ -32,54 +33,32 @@ const featureDemos = [
     title: "Radar de produtos",
     tag: "RADAR",
     description: "Encontre produtos validados, compare o potencial e leve a melhor oportunidade direto para a criação.",
-    src: "/assets/module-radar-full.webp",
     benefits: ["Compare vendas, comissão e crescimento", "Filtre oportunidades em segundos", "Envie o produto direto para a criação"],
     outcome: "Você sai da dúvida com um produto escolhido e pronto para virar conteúdo.",
-    screenActions: [
-      { label: "Buscar produto", result: "Busca ativada: produtos em crescimento", x: 19.8, y: 42.1, width: 49.7, height: 5.5 },
-      { label: "Ordenar por faturamento", result: "Resultados ordenados pelo maior faturamento", x: 70.4, y: 42.1, width: 16.6, height: 5.5 },
-      { label: "Selecionar produto líder", result: "Conjunto de panelas selecionado para criação", x: 19.8, y: 50.4, width: 18.5, height: 35.3 },
-    ],
   },
   {
     id: "boost",
     title: "Viral Boost",
     tag: "BOOST",
     description: "Transforme uma ideia simples em uma história curta, pensada para prender atenção e fazer a conta crescer.",
-    src: "/assets/module-boost-full.webp",
     benefits: ["Transforme uma ideia em um hook forte", "Estruture histórias curtas com ritmo", "Gere roteiros pensados para retenção"],
     outcome: "Uma ideia simples vira um roteiro organizado, pronto para entrar em produção.",
-    screenActions: [
-      { label: "Escolher etapa Frutas", result: "Etapa 1 aberta: escolha de personagens", x: 20.8, y: 48.8, width: 7.2, height: 5.5 },
-      { label: "Usar Historinhas de Fruta", result: "Categoria pronta para gerar o roteiro", x: 22.7, y: 79.2, width: 35.6, height: 6.7 },
-    ],
   },
   {
     id: "avatar",
     title: "Personalize IA",
     tag: "AVATAR",
     description: "Defina quem apresenta, onde a cena acontece e mantenha uma identidade visual consistente sem aparecer.",
-    src: "/assets/module-avatar-full.webp",
     benefits: ["Escolha o avatar e o estilo da marca", "Defina cenários para cada campanha", "Mantenha consistência sem aparecer"],
     outcome: "Sua criação ganha uma identidade reconhecível sem depender da sua imagem.",
-    screenActions: [
-      { label: "Ver Influencers", result: "Biblioteca de influencers aberta", x: 19.5, y: 29.6, width: 11.2, height: 6.9 },
-      { label: "Ver Cenários", result: "Biblioteca de cenários aberta", x: 30.5, y: 29.6, width: 10.4, height: 6.9 },
-      { label: "Criar com IA", result: "Fluxo de criação de influencer iniciado", x: 19.5, y: 38.4, width: 10.1, height: 5.5 },
-      { label: "Enviar imagem", result: "Seletor de imagem preparado para envio", x: 30.5, y: 38.4, width: 11.4, height: 5.5 },
-    ],
   },
   {
     id: "studio",
     title: "Lab Studio",
     tag: "STUDIO",
     description: "Faça os ajustes finais, adapte o formato e exporte o criativo sem depender de um editor externo.",
-    src: "/assets/module-studio-full.webp",
     benefits: ["Ajuste o vídeo para cada canal", "Finalize sem um editor externo", "Exporte no formato pronto para publicar"],
     outcome: "O vídeo termina no formato certo para TikTok, Reels, Shopee ou YouTube.",
-    screenActions: [
-      { label: "Selecionar vídeo", result: "Área de upload ativada para escolher um vídeo", x: 32.3, y: 47.1, width: 52.6, height: 38 },
-    ],
   },
 ] as const;
 
@@ -504,8 +483,8 @@ export default function Home() {
       </div>
       <div className="product-tour">
         <div className="product-tour__topline">
-          <div><span>CONHEÇA POR DENTRO</span><strong>Uma tela por vez. Uma função bem explicada.</strong></div>
-          <p>Escolha um módulo</p>
+          <div><span>CONHEÇA POR DENTRO</span><strong>Uma prévia da plataforma. Clique e teste.</strong></div>
+          <p>Não é print estático — é o sistema em miniatura</p>
         </div>
 
         <div className="product-tour__tabs" role="tablist" aria-label="Módulos da plataforma">
@@ -529,9 +508,14 @@ export default function Home() {
         <div className="product-tour__panel" id="product-tour-panel" role="tabpanel">
           <div className="product-tour__screen" key={currentFeature.id}>
             <div className="product-tour__browserbar" aria-hidden="true"><i /><i /><i /><span>app.voomi.ai / {currentFeature.id}</span><b>AO VIVO</b></div>
-            <div className="product-tour__image">
-              <Image src={currentFeature.src} width={1600} height={1000} sizes="(max-width: 900px) 94vw, 66vw" alt={`Tela do módulo ${currentFeature.title}`} priority={false} style={{ width: "100%", height: "100%" }} />
-              <div className="product-tour__wash" aria-hidden="true" />
+            <div className="product-tour__image product-tour__image--live">
+              <ProductPreview
+                activeId={currentFeature.id}
+                onNavigate={(id) => {
+                  const index = featureDemos.findIndex((feature) => feature.id === id);
+                  if (index >= 0) selectFeature(index);
+                }}
+              />
             </div>
           </div>
 
