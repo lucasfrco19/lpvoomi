@@ -163,11 +163,12 @@ function BoostPreview() {
     };
   }, []);
 
-  useEffect(() => {
+  const selectStory = (index: number) => {
+    if (typeTimer.current) window.clearInterval(typeTimer.current);
     setScript("");
     setBusy(false);
-    if (typeTimer.current) window.clearInterval(typeTimer.current);
-  }, [story]);
+    setStory(index);
+  };
 
   const generate = () => {
     const full = `${current.hook}\nCena: avatar apresenta o produto em 8 segundos.\nProva: close no resultado + preço.\nCTA: link na bio, TikTok Shop.`;
@@ -201,7 +202,7 @@ function BoostPreview() {
       </header>
       <div className="app-preview__pills">
         {boostStories.map((item, index) => (
-          <button type="button" key={item.id} className={story === index ? "is-active" : ""} onClick={() => setStory(index)}>
+          <button type="button" key={item.id} className={story === index ? "is-active" : ""} onClick={() => selectStory(index)}>
             0{index + 1} {item.title}
           </button>
         ))}
