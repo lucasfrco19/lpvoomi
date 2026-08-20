@@ -149,6 +149,13 @@ const creationGalleryVideos = [
   { src: "/assets/videos/creation-gallery-06.mp4", poster: "/assets/videos/creation-gallery-06-poster.webp", label: "Criação Voomi 06" },
 ];
 
+const flowSteps = [
+  ["RADAR", "acha"],
+  ["CREATOR LAB", "cria"],
+  ["VIRAL BOOST", "viraliza"],
+  ["LAB STUDIO", "finaliza"],
+] as const;
+
 const videoWarmCache = new Map<string, HTMLVideoElement>();
 
 const proofShots = [
@@ -292,32 +299,20 @@ export default function Home() {
   useEffect(() => {
     const previews = Array.from(document.querySelectorAll<HTMLVideoElement>(".story-rail .story-video video"));
     const rails = Array.from(document.querySelectorAll<HTMLElement>(".story-rail"));
-    const visiblePreviews = new Map<HTMLVideoElement, number>();
-    const unloadTimers = new Map<HTMLVideoElement, number>();
+    const visibleRails = new Set<HTMLElement>();
+    const pendingPlayHandlers = new Map<HTMLVideoElement, () => void>();
     const maxActivePreviews = compactCarousel ? 2 : 3;
+    let activePreviews = new Set<HTMLVideoElement>();
     let syncFrame: number | null = null;
 
-    const cancelUnload = (video: HTMLVideoElement) => {
-      const timer = unloadTimers.get(video);
-      if (timer !== undefined) window.clearTimeout(timer);
-      unloadTimers.delete(video);
-    };
-
     const pausePreview = (video: HTMLVideoElement) => {
+      const pendingHandler = pendingPlayHandlers.get(video);
+      if (pendingHandler) video.removeEventListener("canplay", pendingHandler);
+      pendingPlayHandlers.delete(video);
       video.pause();
-      if (!video.getAttribute("src") || unloadTimers.has(video)) return;
-      const timer = window.setTimeout(() => {
-        if (!visiblePreviews.has(video)) {
-          video.removeAttribute("src");
-          video.load();
-        }
-        unloadTimers.delete(video);
-      }, 8000);
-      unloadTimers.set(video, timer);
     };
 
     const playPreview = (video: HTMLVideoElement) => {
-      cancelUnload(video);
       if (!video.getAttribute("src") && video.dataset.src) {
         video.src = video.dataset.src;
         video.load();
@@ -327,57 +322,71 @@ export default function Home() {
       video.playsInline = true;
       video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
-      if (video.paused) void video.play().catch(() => undefined);
+      const startPlayback = () => {
+        pendingPlayHandlers.delete(video);
+        if (!document.hidden && !activeVideo && activePreviews.has(video) && video.paused) {
+          void video.play().catch(() => undefined);
+        }
+      };
+      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) startPlayback();
+      else if (!pendingPlayHandlers.has(video)) {
+        pendingPlayHandlers.set(video, startPlayback);
+        video.addEventListener("canplay", startPlayback, { once: true });
+      }
     };
 
     const syncVisiblePreviews = () => {
       syncFrame = null;
       if (document.hidden || activeVideo) {
+        activePreviews = new Set();
         previews.forEach(pausePreview);
         return;
       }
-      const activeVideos = new Set(
-        [...visiblePreviews.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, maxActivePreviews)
-          .map(([video]) => video),
-      );
-      previews.forEach((video) => activeVideos.has(video) ? playPreview(video) : pausePreview(video));
+      const sampledVideos: HTMLVideoElement[] = [];
+      visibleRails.forEach((rail) => {
+        const bounds = rail.getBoundingClientRect();
+        const sampleY = Math.min(window.innerHeight - 1, Math.max(0, bounds.top + bounds.height / 2));
+        for (let index = 0; index < maxActivePreviews; index += 1) {
+          const sampleX = window.innerWidth * ((index + 1) / (maxActivePreviews + 1));
+          const card = document.elementFromPoint(sampleX, sampleY)?.closest<HTMLElement>(".story-video");
+          const video = card?.querySelector<HTMLVideoElement>("video");
+          if (video && !sampledVideos.includes(video)) sampledVideos.push(video);
+        }
+      });
+      activePreviews = new Set(sampledVideos.slice(0, maxActivePreviews));
+      previews.forEach((video) => activePreviews.has(video) ? playPreview(video) : pausePreview(video));
     };
 
     const scheduleSync = () => {
       if (syncFrame === null) syncFrame = window.requestAnimationFrame(syncVisiblePreviews);
     };
 
-    const observer = new IntersectionObserver((entries) => {
+    const railObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        const video = entry.target as HTMLVideoElement;
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.08) visiblePreviews.set(video, entry.intersectionRatio);
-        else visiblePreviews.delete(video);
+        const rail = entry.target as HTMLElement;
+        rail.classList.toggle("is-offscreen", !entry.isIntersecting);
+        if (entry.isIntersecting) visibleRails.add(rail);
+        else visibleRails.delete(rail);
       });
       scheduleSync();
-    }, { rootMargin: "120px 12%", threshold: [0, 0.08, 0.25, 0.5, 0.75] });
-
-    const railObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => entry.target.classList.toggle("is-offscreen", !entry.isIntersecting));
     }, { rootMargin: "300px 0px" });
 
     previews.forEach((video) => {
       video.defaultMuted = true;
       video.muted = true;
       video.playsInline = true;
-      observer.observe(video);
     });
     rails.forEach((rail) => railObserver.observe(rail));
     scheduleSync();
+    const syncTimer = window.setInterval(scheduleSync, compactCarousel ? 1200 : 900);
     document.addEventListener("visibilitychange", scheduleSync);
     window.addEventListener("pageshow", scheduleSync);
     window.addEventListener("resize", scheduleSync, { passive: true });
     return () => {
-      observer.disconnect();
       railObserver.disconnect();
       if (syncFrame !== null) window.cancelAnimationFrame(syncFrame);
-      unloadTimers.forEach((timer) => window.clearTimeout(timer));
+      window.clearInterval(syncTimer);
+      pendingPlayHandlers.forEach((handler, video) => video.removeEventListener("canplay", handler));
       document.removeEventListener("visibilitychange", scheduleSync);
       window.removeEventListener("pageshow", scheduleSync);
       window.removeEventListener("resize", scheduleSync);
@@ -533,9 +542,9 @@ export default function Home() {
         </div>
       </article>
       <div className="creation-gallery">
-        <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi. Clique em qualquer vídeo para assistir com som.</p></header>
+        <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi, passando automaticamente para você ver o resultado.</p></header>
         <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
-          <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <div className="story-video story-video--passive" key={`${video.src}-${index}`} aria-hidden={duplicate||undefined}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /></div>})})()}</div>
         </div>
       </div>
       <div className="product-tour">
@@ -588,7 +597,17 @@ export default function Home() {
           </aside>
         </div>
       </div>
-      <div className="flow"><span>RADAR <b>acha</b></span><i>→</i><span>CREATOR LAB <b>cria</b></span><i>→</i><span>VIRAL BOOST <b>viraliza</b></span><i>→</i><span>LAB STUDIO <b>finaliza</b></span></div>
+      <div className="flow">
+        <div className="flow__track">
+          {[false, true].map((duplicate) => (
+            <div className="flow__group" aria-hidden={duplicate || undefined} key={duplicate ? "duplicate" : "original"}>
+              {flowSteps.map(([module, action], index) => (
+                <span key={module}>{module} <b>{action}</b>{index < flowSteps.length - 1 && <i aria-hidden="true">→</i>}</span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
 
     <section id="para-quem" className="container section for-you" data-reveal>
