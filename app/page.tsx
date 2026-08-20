@@ -543,9 +543,13 @@ export default function Home() {
           <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <div className="story-video story-video--passive" key={`${video.src}-${index}`} aria-hidden={duplicate||undefined}><video src={video.src} poster={video.poster||undefined} autoPlay muted loop playsInline preload="metadata" disablePictureInPicture /></div>})})()}</div>
         </div>
       </div>
+      <header className="product-tour-heading">
+        <span>PLATAFORMA AO VIVO</span>
+        <h3>Conheça por <em>dentro.</em></h3>
+      </header>
       <div className="product-tour">
         <div className="product-tour__topline">
-          <div><span>CONHEÇA POR DENTRO</span><strong>Uma prévia da plataforma. Clique e teste.</strong></div>
+          <div><strong>Uma prévia da plataforma. Clique e teste.</strong></div>
           <p>Não é print estático — é o sistema em miniatura</p>
         </div>
 
