@@ -301,7 +301,7 @@ export default function Home() {
     const rails = Array.from(document.querySelectorAll<HTMLElement>(".story-rail"));
     const visibleRails = new Set<HTMLElement>();
     const pendingPlayHandlers = new Map<HTMLVideoElement, () => void>();
-    const maxActivePreviews = compactCarousel ? 2 : 3;
+    const maxActivePreviews = compactCarousel ? 1 : 2;
     let activePreviews = new Set<HTMLVideoElement>();
     let syncFrame: number | null = null;
 
@@ -344,6 +344,10 @@ export default function Home() {
       }
       const sampledVideos: HTMLVideoElement[] = [];
       visibleRails.forEach((rail) => {
+        if (rail.classList.contains("story-rail--creations")) {
+          sampledVideos.push(...rail.querySelectorAll<HTMLVideoElement>("video"));
+          return;
+        }
         const bounds = rail.getBoundingClientRect();
         const sampleY = Math.min(window.innerHeight - 1, Math.max(0, bounds.top + bounds.height / 2));
         for (let index = 0; index < maxActivePreviews; index += 1) {
@@ -353,7 +357,7 @@ export default function Home() {
           if (video && !sampledVideos.includes(video)) sampledVideos.push(video);
         }
       });
-      activePreviews = new Set(sampledVideos.slice(0, maxActivePreviews));
+      activePreviews = new Set(sampledVideos);
       previews.forEach((video) => activePreviews.has(video) ? playPreview(video) : pausePreview(video));
     };
 
@@ -544,7 +548,7 @@ export default function Home() {
       <div className="creation-gallery">
         <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi, passando automaticamente para você ver o resultado.</p></header>
         <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
-          <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <div className="story-video story-video--passive" key={`${video.src}-${index}`} aria-hidden={duplicate||undefined}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /></div>})})()}</div>
+          <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <div className="story-video story-video--passive" key={`${video.src}-${index}`} aria-hidden={duplicate||undefined}><video src={video.src} poster={video.poster||undefined} autoPlay muted loop playsInline preload="metadata" disablePictureInPicture /></div>})})()}</div>
         </div>
       </div>
       <div className="product-tour">
