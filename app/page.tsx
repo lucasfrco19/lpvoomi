@@ -156,8 +156,6 @@ const flowSteps = [
   ["LAB STUDIO", "finaliza"],
 ] as const;
 
-const videoWarmCache = new Map<string, HTMLVideoElement>();
-
 const proofShots = [
   { src: "/assets/proofs/proof-primeira-venda.jpeg", metric: "Primeira venda", label: "Começou a postar e a primeira venda saiu" },
   { src: "/assets/proofs/proof-512-vinte-vendas.jpeg", metric: "R$ 512,87", label: "20 produtos vendidos em 7 dias" },
@@ -250,25 +248,6 @@ export default function Home() {
     return () => carousel.removeEventListener("wheel", handleWheel);
   }, [painSlide]);
 
-  const warmVideo = (src: string) => {
-    if (videoWarmCache.has(src)) return;
-    if (videoWarmCache.size >= 2) {
-      const oldestSrc = videoWarmCache.keys().next().value;
-      if (oldestSrc) {
-        const oldestVideo = videoWarmCache.get(oldestSrc);
-        oldestVideo?.removeAttribute("src");
-        oldestVideo?.load();
-        videoWarmCache.delete(oldestSrc);
-      }
-    }
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    video.src = src;
-    video.muted = true;
-    videoWarmCache.set(src, video);
-    video.load();
-  };
-
   const openVideo = (video: (typeof carouselVideos)[number]) => {
     setVideoReady(false);
     setActiveVideo(video);
@@ -301,9 +280,11 @@ export default function Home() {
     const rails = Array.from(document.querySelectorAll<HTMLElement>(".story-rail"));
     const visibleRails = new Set<HTMLElement>();
     const pendingPlayHandlers = new Map<HTMLVideoElement, () => void>();
-    const maxActivePreviews = compactCarousel ? 1 : 2;
     let activePreviews = new Set<HTMLVideoElement>();
     let syncFrame: number | null = null;
+    let carouselFrame: number | null = null;
+    let lastCarouselTime = window.performance.now();
+    const carouselPositions = new Map<HTMLElement, number>();
 
     const pausePreview = (video: HTMLVideoElement) => {
       const pendingHandler = pendingPlayHandlers.get(video);
@@ -343,20 +324,7 @@ export default function Home() {
         return;
       }
       const sampledVideos: HTMLVideoElement[] = [];
-      visibleRails.forEach((rail) => {
-        if (rail.classList.contains("story-rail--creations")) {
-          sampledVideos.push(...rail.querySelectorAll<HTMLVideoElement>("video"));
-          return;
-        }
-        const bounds = rail.getBoundingClientRect();
-        const sampleY = Math.min(window.innerHeight - 1, Math.max(0, bounds.top + bounds.height / 2));
-        for (let index = 0; index < maxActivePreviews; index += 1) {
-          const sampleX = window.innerWidth * ((index + 1) / (maxActivePreviews + 1));
-          const card = document.elementFromPoint(sampleX, sampleY)?.closest<HTMLElement>(".story-video");
-          const video = card?.querySelector<HTMLVideoElement>("video");
-          if (video && !sampledVideos.includes(video)) sampledVideos.push(video);
-        }
-      });
+      visibleRails.forEach((rail) => sampledVideos.push(...rail.querySelectorAll<HTMLVideoElement>("video")));
       activePreviews = new Set(sampledVideos);
       previews.forEach((video) => activePreviews.has(video) ? playPreview(video) : pausePreview(video));
     };
@@ -382,14 +350,38 @@ export default function Home() {
     });
     rails.forEach((rail) => railObserver.observe(rail));
     scheduleSync();
-    const syncTimer = window.setInterval(scheduleSync, compactCarousel ? 1200 : 900);
+
+    const advanceMobileCarousels = (time: number) => {
+      const elapsed = Math.min(64, time - lastCarouselTime);
+      lastCarouselTime = time;
+      if (!document.hidden && !activeVideo) {
+        visibleRails.forEach((rail) => {
+          if (rail.classList.contains("is-touching")) {
+            carouselPositions.set(rail, rail.scrollLeft);
+            return;
+          }
+          const track = rail.querySelector<HTMLElement>(".story-rail__track");
+          if (!track) return;
+          const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 0;
+          const loopWidth = track.scrollWidth / 2 + gap / 2;
+          const speed = rail.classList.contains("story-rail--videos") ? 16 : 34;
+          const current = carouselPositions.get(rail) ?? rail.scrollLeft;
+          const next = current + speed * (elapsed / 1000);
+          const wrapped = next >= loopWidth ? next - loopWidth : next;
+          carouselPositions.set(rail, wrapped);
+          rail.scrollLeft = wrapped;
+        });
+      }
+      carouselFrame = window.requestAnimationFrame(advanceMobileCarousels);
+    };
+    if (compactCarousel) carouselFrame = window.requestAnimationFrame(advanceMobileCarousels);
     document.addEventListener("visibilitychange", scheduleSync);
     window.addEventListener("pageshow", scheduleSync);
     window.addEventListener("resize", scheduleSync, { passive: true });
     return () => {
       railObserver.disconnect();
       if (syncFrame !== null) window.cancelAnimationFrame(syncFrame);
-      window.clearInterval(syncTimer);
+      if (carouselFrame !== null) window.cancelAnimationFrame(carouselFrame);
       pendingPlayHandlers.forEach((handler, video) => video.removeEventListener("canplay", handler));
       document.removeEventListener("visibilitychange", scheduleSync);
       window.removeEventListener("pageshow", scheduleSync);
@@ -626,7 +618,7 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p className="proof-summary">Nenhum apareceu na câmera. Nenhum tinha experiência.<strong>A diferença é que eles começaram.</strong></p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track">{(()=>{ const renderedVideos = [...carouselVideos, ...carouselVideos]; return renderedVideos.map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1:0}><video data-src={video.src} poster={video.poster || undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{ const renderedVideos = [...carouselVideos, ...carouselVideos]; return renderedVideos.map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerDown={(event) => event.currentTarget.closest(".story-rail")?.classList.add("is-touching")} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1:0}><video src={video.src} poster={video.poster || undefined} autoPlay muted loop playsInline preload="metadata" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span></div>
