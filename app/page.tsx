@@ -136,7 +136,7 @@ const carouselVideos = [
   { src: "/assets/videos/voomi-video-04.mp4", poster: "/assets/voomi-video-04-poster.jpg", label: "Resultado de criador 04" },
   { src: "/assets/videos/voomi-video-05.mp4", poster: "/assets/voomi-video-05-poster.jpg", label: "Resultado de criador 05" },
   { src: "/assets/videos/voomi-video-06.mp4", poster: "/assets/voomi-video-06-poster.jpg", label: "Resultado de criador 06" },
-  { src: "/assets/videos/voomi-testimonial-07.mp4", poster: "", label: "Depoimento de criador 07" },
+  { src: "/assets/videos/voomi-testimonial-07.mp4", poster: "/assets/videos/voomi-testimonial-07-poster.webp", label: "Depoimento de criador 07" },
 ];
 
 const creationGalleryVideos = [
@@ -145,8 +145,8 @@ const creationGalleryVideos = [
   { src: "/assets/videos/creation-gallery-02.mp4", poster: "/assets/videos/creation-gallery-02-poster.jpg", label: "Criação Voomi 02" },
   { src: "/assets/videos/creation-gallery-03.mp4", poster: "/assets/videos/creation-gallery-03-poster.jpg", label: "Criação Voomi 03" },
   { src: "/assets/videos/creation-gallery-04.mp4", poster: "/assets/videos/creation-gallery-04-poster.jpg", label: "Criação Voomi 04" },
-  { src: "/assets/videos/creation-gallery-05.mp4", poster: "", label: "Criação Voomi 05" },
-  { src: "/assets/videos/creation-gallery-06.mp4", poster: "", label: "Criação Voomi 06" },
+  { src: "/assets/videos/creation-gallery-05.mp4", poster: "/assets/videos/creation-gallery-05-poster.webp", label: "Criação Voomi 05" },
+  { src: "/assets/videos/creation-gallery-06.mp4", poster: "/assets/videos/creation-gallery-06-poster.webp", label: "Criação Voomi 06" },
 ];
 
 const videoWarmCache = new Map<string, HTMLVideoElement>();
@@ -244,9 +244,18 @@ export default function Home() {
   }, [painSlide]);
 
   const warmVideo = (src: string) => {
-    if (videoWarmCache.has(src) || videoWarmCache.size >= 3) return;
+    if (videoWarmCache.has(src)) return;
+    if (videoWarmCache.size >= 2) {
+      const oldestSrc = videoWarmCache.keys().next().value;
+      if (oldestSrc) {
+        const oldestVideo = videoWarmCache.get(oldestSrc);
+        oldestVideo?.removeAttribute("src");
+        oldestVideo?.load();
+        videoWarmCache.delete(oldestSrc);
+      }
+    }
     const video = document.createElement("video");
-    video.preload = "auto";
+    video.preload = "metadata";
     video.src = src;
     video.muted = true;
     videoWarmCache.set(src, video);
@@ -282,7 +291,33 @@ export default function Home() {
 
   useEffect(() => {
     const previews = Array.from(document.querySelectorAll<HTMLVideoElement>(".story-rail .story-video video"));
+    const rails = Array.from(document.querySelectorAll<HTMLElement>(".story-rail"));
+    const visiblePreviews = new Map<HTMLVideoElement, number>();
+    const unloadTimers = new Map<HTMLVideoElement, number>();
+    const maxActivePreviews = compactCarousel ? 2 : 3;
+    let syncFrame: number | null = null;
+
+    const cancelUnload = (video: HTMLVideoElement) => {
+      const timer = unloadTimers.get(video);
+      if (timer !== undefined) window.clearTimeout(timer);
+      unloadTimers.delete(video);
+    };
+
+    const pausePreview = (video: HTMLVideoElement) => {
+      video.pause();
+      if (!video.getAttribute("src") || unloadTimers.has(video)) return;
+      const timer = window.setTimeout(() => {
+        if (!visiblePreviews.has(video)) {
+          video.removeAttribute("src");
+          video.load();
+        }
+        unloadTimers.delete(video);
+      }, 8000);
+      unloadTimers.set(video, timer);
+    };
+
     const playPreview = (video: HTMLVideoElement) => {
+      cancelUnload(video);
       if (!video.getAttribute("src") && video.dataset.src) {
         video.src = video.dataset.src;
         video.load();
@@ -294,42 +329,61 @@ export default function Home() {
       video.setAttribute("playsinline", "");
       if (video.paused) void video.play().catch(() => undefined);
     };
+
     const syncVisiblePreviews = () => {
-      if (document.hidden) {
-        previews.forEach((video) => video.pause());
+      syncFrame = null;
+      if (document.hidden || activeVideo) {
+        previews.forEach(pausePreview);
         return;
       }
-      const visibleVideos = previews
-        .map((video) => ({ video, bounds: video.getBoundingClientRect() }))
-        .filter(({ bounds }) => bounds.right > 0 && bounds.left < window.innerWidth && bounds.bottom > 0 && bounds.top < window.innerHeight)
-        .sort((a, b) => Math.abs((a.bounds.left + a.bounds.right) / 2 - window.innerWidth / 2) - Math.abs((b.bounds.left + b.bounds.right) / 2 - window.innerWidth / 2));
-      const activeVideos = new Set(visibleVideos.slice(0, compactCarousel ? 3 : 4).map(({ video }) => video));
-      previews.forEach((video) => {
-        const bounds = video.getBoundingClientRect();
-        const visible = bounds.right > 0 && bounds.left < window.innerWidth && bounds.bottom > 0 && bounds.top < window.innerHeight;
-        if (visible && activeVideos.has(video)) playPreview(video);
-        else video.pause();
-      });
+      const activeVideos = new Set(
+        [...visiblePreviews.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, maxActivePreviews)
+          .map(([video]) => video),
+      );
+      previews.forEach((video) => activeVideos.has(video) ? playPreview(video) : pausePreview(video));
     };
+
+    const scheduleSync = () => {
+      if (syncFrame === null) syncFrame = window.requestAnimationFrame(syncVisiblePreviews);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.08) visiblePreviews.set(video, entry.intersectionRatio);
+        else visiblePreviews.delete(video);
+      });
+      scheduleSync();
+    }, { rootMargin: "120px 12%", threshold: [0, 0.08, 0.25, 0.5, 0.75] });
+
+    const railObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => entry.target.classList.toggle("is-offscreen", !entry.isIntersecting));
+    }, { rootMargin: "300px 0px" });
+
     previews.forEach((video) => {
       video.defaultMuted = true;
       video.muted = true;
       video.playsInline = true;
+      observer.observe(video);
     });
-    const initialSync = window.requestAnimationFrame(syncVisiblePreviews);
-    const syncTimer = window.setInterval(syncVisiblePreviews, 900);
-    document.addEventListener("visibilitychange", syncVisiblePreviews);
-    window.addEventListener("pageshow", syncVisiblePreviews);
-    window.addEventListener("resize", syncVisiblePreviews, { passive: true });
+    rails.forEach((rail) => railObserver.observe(rail));
+    scheduleSync();
+    document.addEventListener("visibilitychange", scheduleSync);
+    window.addEventListener("pageshow", scheduleSync);
+    window.addEventListener("resize", scheduleSync, { passive: true });
     return () => {
-      window.cancelAnimationFrame(initialSync);
-      window.clearInterval(syncTimer);
-      document.removeEventListener("visibilitychange", syncVisiblePreviews);
-      window.removeEventListener("pageshow", syncVisiblePreviews);
-      window.removeEventListener("resize", syncVisiblePreviews);
+      observer.disconnect();
+      railObserver.disconnect();
+      if (syncFrame !== null) window.cancelAnimationFrame(syncFrame);
+      unloadTimers.forEach((timer) => window.clearTimeout(timer));
+      document.removeEventListener("visibilitychange", scheduleSync);
+      window.removeEventListener("pageshow", scheduleSync);
+      window.removeEventListener("resize", scheduleSync);
       previews.forEach((video) => video.pause());
     };
-  }, [compactCarousel]);
+  }, [activeVideo, compactCarousel]);
 
   useLayoutEffect(() => {
     const page = pageRef.current;
@@ -481,7 +535,7 @@ export default function Home() {
       <div className="creation-gallery">
         <header className="creation-gallery__head"><span>GALERIA DE CRIAÇÕES</span><h3>Ideias que viraram<br /><em>vídeos prontos.</em></h3><p>Criações feitas dentro da Voomi. Clique em qualquer vídeo para assistir com som.</p></header>
         <div className="story-rail story-rail--creations" aria-label="Galeria em carrossel de vídeos criados na Voomi">
-          <div className="story-rail__track">{(()=>{const sequence=[...creationGalleryVideos,...creationGalleryVideos];const renderedVideos=[...sequence,...sequence];return renderedVideos.map((video,index)=>{const duplicate=index>=sequence.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{const renderedVideos=[...creationGalleryVideos,...creationGalleryVideos];return renderedVideos.map((video,index)=>{const duplicate=index>=creationGalleryVideos.length;return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={()=>warmVideo(video.src)} onPointerDown={(event)=>{warmVideo(video.src);event.currentTarget.closest(".story-rail")?.classList.add("is-touching");}} onPointerUp={(event)=>{event.currentTarget.closest(".story-rail")?.classList.remove("is-touching");if(event.pointerType!=="mouse")openVideo(video);}} onPointerCancel={(event)=>event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={()=>warmVideo(video.src)} onClick={()=>openVideo(video)} aria-label={duplicate?undefined:`Abrir ${video.label} com áudio`} aria-hidden={duplicate||undefined} tabIndex={duplicate?-1:0}><video data-src={video.src} poster={video.poster||undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
       </div>
       <div className="product-tour">
@@ -549,7 +603,7 @@ export default function Home() {
       <div className="container">
         <div className="section-head"><span>05 — GENTE REAL</span><h2>Todo dia chega mensagem<br /><em>assim no nosso suporte.</em></h2><p className="proof-summary">Nenhum apareceu na câmera. Nenhum tinha experiência.<strong>A diferença é que eles começaram.</strong></p></div>
         <div className="story-rail story-rail--videos" aria-label="Carrossel de vídeos de criadores">
-          <div className="story-rail__track">{(()=>{ const sequence = [...carouselVideos, ...carouselVideos]; const renderedVideos = [...sequence, ...sequence]; return renderedVideos.map((video, index)=>{ const duplicate = index >= sequence.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1:0}><video data-src={video.src} poster={video.poster || undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
+          <div className="story-rail__track">{(()=>{ const renderedVideos = [...carouselVideos, ...carouselVideos]; return renderedVideos.map((video, index)=>{ const duplicate = index >= carouselVideos.length; return <button type="button" className="story-video" key={`${video.src}-${index}`} onPointerEnter={() => warmVideo(video.src)} onPointerDown={(event) => { warmVideo(video.src); event.currentTarget.closest(".story-rail")?.classList.add("is-touching"); }} onPointerUp={(event) => { event.currentTarget.closest(".story-rail")?.classList.remove("is-touching"); if (event.pointerType !== "mouse") openVideo(video); }} onPointerCancel={(event) => event.currentTarget.closest(".story-rail")?.classList.remove("is-touching")} onFocus={() => warmVideo(video.src)} onClick={() => openVideo(video)} aria-label={duplicate ? undefined : `Abrir ${video.label} com áudio`} aria-hidden={duplicate || undefined} tabIndex={duplicate ? -1:0}><video data-src={video.src} poster={video.poster || undefined} muted loop playsInline preload="none" disablePictureInPicture /><span><i>▶</i><b>CLIQUE PARA OUVIR</b></span></button>})})()}</div>
         </div>
         <div className="proof-orbit">
           <div className="proof-orbit__hud"><span>RESULTADOS REAIS</span></div>
