@@ -8,7 +8,6 @@ import { FaAmazon } from "react-icons/fa";
 import { FiShield, FiUserCheck, FiZap } from "react-icons/fi";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ProductPreview } from "./product-preview";
 
 const nav = [
   ["Como funciona", "#plataforma"],
@@ -30,6 +29,8 @@ const pains = [
 const featureDemos = [
   {
     id: "radar",
+    image: "/assets/module-radar-full.webp",
+    imageAlt: "Tela do Radar de Produtos da Voomi com produtos em alta e métricas de vendas",
     title: "Radar de produtos",
     tag: "RADAR",
     description: "Encontre produtos validados, compare o potencial e leve a melhor oportunidade direto para a criação.",
@@ -38,6 +39,8 @@ const featureDemos = [
   },
   {
     id: "boost",
+    image: "/assets/module-boost-full.webp",
+    imageAlt: "Tela do Viral Boost da Voomi para criação de histórias curtas e virais",
     title: "Viral Boost",
     tag: "BOOST",
     description: "Transforme uma ideia simples em uma história curta, pensada para prender atenção e fazer a conta crescer.",
@@ -46,6 +49,8 @@ const featureDemos = [
   },
   {
     id: "avatar",
+    image: "/assets/module-avatar-full.webp",
+    imageAlt: "Tela Personalize IA da Voomi para criação de influenciadores e cenários",
     title: "Personalize IA",
     tag: "AVATAR",
     description: "Defina quem apresenta, onde a cena acontece e mantenha uma identidade visual consistente sem aparecer.",
@@ -54,6 +59,8 @@ const featureDemos = [
   },
   {
     id: "studio",
+    image: "/assets/module-studio-full.webp",
+    imageAlt: "Tela do Lab Studio da Voomi para edição e exportação de vídeos",
     title: "Lab Studio",
     tag: "STUDIO",
     description: "Faça os ajustes finais, adapte o formato e exporte o criativo sem depender de um editor externo.",
@@ -544,13 +551,13 @@ export default function Home() {
         </div>
       </div>
       <header className="product-tour-heading">
-        <span>PLATAFORMA AO VIVO</span>
+        <span>TELAS DA PLATAFORMA</span>
         <h3>Conheça por <em>dentro.</em></h3>
       </header>
       <div className="product-tour">
         <div className="product-tour__topline">
-          <div><strong>Uma prévia da plataforma. Clique e teste.</strong></div>
-          <p>Não é print estático — é o sistema em miniatura</p>
+          <div><strong>Veja como cada etapa funciona na prática.</strong></div>
+          <p>Navegue pelas telas reais e conheça o papel de cada módulo.</p>
         </div>
 
         <div className="product-tour__tabs" role="tablist" aria-label="Módulos da plataforma">
@@ -571,17 +578,23 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="product-tour__panel" id="product-tour-panel" role="tabpanel">
+        <div className="product-tour__panel" id="product-tour-panel" role="tabpanel" aria-live="polite">
           <div className="product-tour__screen" key={currentFeature.id}>
-            <div className="product-tour__browserbar" aria-hidden="true"><i /><i /><i /><span>app.voomi.ai / {currentFeature.id}</span><b>AO VIVO</b></div>
-            <div className="product-tour__image product-tour__image--live">
-              <ProductPreview
-                activeId={currentFeature.id}
-                onNavigate={(id) => {
-                  const index = featureDemos.findIndex((feature) => feature.id === id);
-                  if (index >= 0) selectFeature(index);
-                }}
+            <div className="product-tour__image product-tour__image--screenshot">
+              <Image
+                src={currentFeature.image}
+                alt={currentFeature.imageAlt}
+                fill
+                sizes="(max-width: 700px) calc(100vw - 60px), (max-width: 1240px) calc(100vw - 100px), 1120px"
+                unoptimized
               />
+              <button type="button" className="product-tour__arrow product-tour__arrow--previous" onClick={() => selectFeature(activeFeature - 1)} aria-label="Ver tela anterior">←</button>
+              <button type="button" className="product-tour__arrow product-tour__arrow--next" onClick={() => selectFeature(activeFeature + 1)} aria-label="Ver próxima tela">→</button>
+            </div>
+            <div className="product-tour__screen-nav" aria-label="Navegação entre as telas">
+              <button type="button" onClick={() => selectFeature(activeFeature - 1)}><span>←</span> Anterior</button>
+              <p><b>0{activeFeature + 1}</b><span>/</span>0{featureDemos.length}</p>
+              <button type="button" onClick={() => selectFeature(activeFeature + 1)}>Próxima <span>→</span></button>
             </div>
           </div>
 
